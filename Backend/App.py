@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from models import Student, Teacher, Admin, OTP, send_email_otp, send_sms_otp, Assignment, Submission
+from models import Student, Teacher, Admin, OTP, send_email_otp, send_sms_otp, Assignment, Submission,Notification
 from db import execute_query
 from datetime import datetime
 from flask import send_from_directory, request, redirect, url_for, flash
@@ -127,34 +127,48 @@ def student_dashboard():
 
     student_id = session['student_id']
 
-    # Basic info
+    # ✅ Get student details
     student = Student.get_details(student_id)
+
+    # ✅ Get enrolled courses
     courses = Student.show_courses(student_id)
-    notifications = Student.get_notifications(student_id)
-    chart_data = Student.get_course_grades(student_id)
 
-    labels = [c[0] for c in chart_data]
-    grades = [c[1] for c in chart_data]
-
-    # ✅ Fetch all assignments (with grades if assigned)
+    # ✅ Get assignments (joined with submissions + marks)
     assignments = execute_query("""
-        SELECT a.title, s.marks, a.due_date
+        SELECT 
+            a.id, 
+            a.title, 
+            a.due_date, 
+            s.file_path, 
+            s.marks
         FROM Assignments a
-        LEFT JOIN Submissions s ON a.id = s.assignment_id AND s.student_id = :1
         JOIN StudentCourses sc ON a.course_id = sc.course_id
+        LEFT JOIN Submissions s ON s.assignment_id = a.id AND s.student_id = :1
         WHERE sc.student_id = :1
         ORDER BY a.due_date
     """, (student_id,), fetch=True)
 
+    # ✅ Course averages for performance chart
+    grades_data = Student.get_course_grades(student_id)
+    chart_labels = [row[0] for row in grades_data]
+    chart_data = [float(row[1]) for row in grades_data]
+
+    # ✅ Notifications (from new table)
+    try:
+        notifications = Notification.get_for_student(student_id)
+    except Exception:
+        notifications = []
+
     return render_template(
-        'student_dashboard.html',
+        "student_dashboard.html",
         student=student,
         courses=courses,
-        notifications=notifications,
         assignments=assignments,
-        chart_labels=labels,
-        chart_data=grades
+        notifications=notifications,
+        chart_labels=chart_labels,
+        chart_data=chart_data
     )
+
 
 
 # ---------------- STUDENT PROFILE ----------------
