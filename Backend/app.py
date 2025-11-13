@@ -368,7 +368,7 @@ def teacher_dashboard():
         attendance_summary=attendance_summary  
 
     )
-#changes
+#re check
 
 @app.route('/teacher/login', methods=['POST'])
 def teacher_login():
