@@ -2,209 +2,518 @@
 {% block title %}Student Dashboard{% endblock %}
 {% block content %}
 
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+<!-- Optimized CDNs -->
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+  :root {
+    --primary-color: #6366f1;
+    --secondary-color: #8b5cf6;
+  }
+  
   body {
-    background: radial-gradient(circle at top left, #111 0%, #0d0d0d 60%, #000 100%);
-    color: #e5e5e5;
+    background: #0a0a0a;
+    color: #e3e3e3;
     font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
   }
+  
+  /* Simplified glass effects */
   .glass {
-    background: rgba(30, 30, 30, 0.6);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(100, 100, 100, 0.2);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  .glow {
-    transition: 0.3s ease;
+  
+  .glass-card {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .glow:hover {
-    box-shadow: 0 0 10px rgba(140, 140, 255, 0.3);
+  
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
     transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   }
+  
+  .bg-gradient {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  }
+  
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Simplified animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 2px;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .status-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+  .status-submitted { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+  .status-graded { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+  .status-due { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 </style>
 
-<!-- Navbar -->
-<nav class="flex justify-between items-center bg-[#0f0f0f] border-b border-[#2c2c2c] px-8 py-4 fixed w-full top-0 z-50 shadow-lg">
-  <h1 class="text-2xl font-semibold tracking-wide text-white flex items-center gap-3">
-    🎓 Student Dashboard
-  </h1>
-  <form action="/logout" method="POST" onsubmit="return confirm('Logout?')" class="flex items-center">
-    <button class="bg-[#1f1f1f] hover:bg-[#2d2d2d] text-white px-5 py-2 rounded-lg text-sm glow transition">Logout</button>
-  </form>
-</nav>
-
-<!-- Page Container -->
-<div class="pt-24 px-10 pb-16 grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-  <!-- Profile Card -->
-  <section class="glass p-6 rounded-2xl glow">
-    <div class="flex flex-col items-center text-center space-y-4">
-      <img src="https://cdn-icons-png.flaticon.com/512/1077/1077012.png"
-           class="w-24 h-24 rounded-full border border-gray-600 shadow-md">
-      <div>
-        <h2 class="text-xl font-semibold">{{ student[1] }}</h2>
-        <p class="text-gray-400 text-sm">ID: {{ student[0] }}</p>
-        <p class="text-gray-400 text-sm">Grade: {{ student[2] or 'Not Assigned' }}</p>
+<!-- NAVBAR -->
+<header class="fixed top-0 left-0 right-0 glass z-50 border-b border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3 fade-in">
+      <div class="w-10 h-10 bg-gradient rounded-xl flex items-center justify-center">
+        <span class="text-white font-bold text-lg">E</span>
       </div>
-      <p class="italic text-gray-500 text-sm">“Learning never exhausts the mind.”</p>
+      <div>
+        <h1 class="text-xl font-bold text-gradient">EduSync</h1>
+        <p class="text-xs text-gray-400 -mt-1">Student Portal</p>
+      </div>
     </div>
-  </section>
+    
+    <div class="flex items-center gap-3 fade-in">
+      <div class="relative">
+        <input id="globalSearch" type="text" placeholder="🔍 Search..."
+               class="glass-card px-3 py-2 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"/>
+      </div>
+      
+      <div class="relative">
+        <button class="p-2 glass-card rounded-lg hover-lift">
+          <div class="w-5 h-5 text-gray-400">🔔</div>
+          {% if notifications %}
+          <div class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+          {% endif %}
+        </button>
+      </div>
+      
+      <form action="/logout" method="POST">
+        <button class="px-3 py-2 glass-card hover-lift text-sm rounded-lg">
+          🚪 Logout
+        </button>
+      </form>
+    </div>
+  </div>
+</header>
 
-  <!-- Enrolled Courses -->
-  <section class="glass p-6 rounded-2xl lg:col-span-2 glow">
-    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">📚 Enrolled Courses</h2>
-    {% if courses %}
-    <ul class="grid md:grid-cols-2 gap-4">
-      {% for c in courses %}
-      <li class="bg-[#1b1b1b] border border-[#333] p-4 rounded-lg flex justify-between items-center hover:bg-[#262626] transition">
-        <span class="font-medium">{{ c }}</span>
-        <span class="text-gray-500 text-sm">Active</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-gray-500 italic">No enrolled courses yet.</p>
-    {% endif %}
-  </section>
+<!-- HERO SECTION -->
+<section class="mt-20 mb-8 px-4 sm:px-6 lg:px-8 fade-in">
+  <div class="glass p-6 rounded-xl hover-lift">
+    <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div class="flex-1">
+        <h2 class="text-3xl font-bold text-white mb-2">Welcome back, {{ student[1] }}! 👋</h2>
+        <p class="text-gray-400">Here's your academic dashboard at a glance</p>
+        
+        <div class="flex gap-4 mt-6">
+          <div class="glass-card px-4 py-3 rounded-lg text-center hover-lift">
+            <div class="text-sm text-gray-400 mb-1">Courses</div>
+            <div class="text-xl font-bold text-white">{{ courses|length if courses else 0 }}</div>
+          </div>
+          
+          <div class="glass-card px-4 py-3 rounded-lg text-center hover-lift relative">
+            <div class="text-sm text-gray-400 mb-1">Pending</div>
+            <div class="text-xl font-bold text-yellow-400">{{ assignments|selectattr('3','eq',None)|list|length if assignments else 0 }}</div>
+          </div>
+          
+          <div class="glass-card px-4 py-3 rounded-lg text-center hover-lift">
+            <div class="text-sm text-gray-400 mb-1">Notifications</div>
+            <div class="text-xl font-bold text-blue-400">{{ notifications|length if notifications else 0 }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-center">
+        <div class="w-16 h-16 bg-gradient rounded-full flex items-center justify-center mx-auto">
+          <span class="text-white text-xl">🎓</span>
+        </div>
+        <p class="text-gray-400 text-sm mt-2">Academic Progress</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <!-- Enroll Form -->
-  <section class="glass p-6 rounded-2xl glow">
-    <h2 class="text-xl font-semibold mb-4">📝 Enroll in a Course</h2>
-    <form method="POST" action="/student/enroll" class="space-y-4">
-      <input type="text" name="course_id" placeholder="Enter Course ID"
-             class="w-full bg-[#1b1b1b] border border-[#333] text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-gray-500"
-             required>
-      <button class="w-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white py-2 rounded-md font-medium">Enroll</button>
-    </form>
-  </section>
+<!-- MAIN GRID -->
+<div class="px-4 sm:px-6 lg:px-8 mb-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  <!-- Assignments Section -->
-  <section class="glass p-6 rounded-2xl col-span-2 glow">
-    <h2 class="text-xl font-semibold mb-4">📂 Assignments</h2>
-    {% if assignments %}
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-gray-300">
-        <thead class="text-gray-400 border-b border-gray-700 text-sm uppercase">
-          <tr>
-            <th class="py-2">Title</th>
-            <th class="py-2">Due</th>
-            <th class="py-2">Submission</th>
-            <th class="py-2">Marks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in assignments %}
-          <tr class="border-b border-[#222] hover:bg-[#181818] transition">
-            <td class="py-3 font-medium">{{ a[1] }}</td>
-            <td class="py-3 text-gray-400">{{ a[2] }}</td>
-            <td class="py-3">
-              {% if a[3] %}
-              <div class="flex items-center gap-2">
-                <a href="/{{ a[3] }}" class="text-blue-400 hover:text-blue-300 text-sm">📎 View</a>
-                <form method="POST" action="/student/upload" enctype="multipart/form-data" class="flex items-center gap-2">
-                  <input type="hidden" name="assignment_id" value="{{ a[0] }}">
-                  <input type="file" name="file" class="text-gray-400 text-xs w-36">
-                  <button type="submit" class="text-gray-300 hover:text-white text-sm">↻ Update</button>
-                </form>
-              </div>
-              {% else %}
-              <form method="POST" action="/student/upload" enctype="multipart/form-data" class="flex items-center gap-2">
-                <input type="hidden" name="assignment_id" value="{{ a[0] }}">
-                <input type="file" name="file" class="text-gray-400 text-xs w-36">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">Submit</button>
-              </form>
-              {% endif %}
-            </td>
-            <td class="py-3">
-              {% if a[4] %}
-                <span class="text-green-400 font-medium">{{ a[4] }}</span>
-              {% elif a[3] %}
-                <span class="text-yellow-400 text-sm">Submitted</span>
-              {% else %}
-                <span class="text-gray-500 text-sm">Not submitted</span>
-              {% endif %}
-            </td>
-          </tr>
+  <!-- LEFT SIDEBAR -->
+  <div class="space-y-6">
+    <!-- PROFILE CARD -->
+    <div class="glass p-5 rounded-xl hover-lift fade-in stagger-1">
+      <div class="flex flex-col items-center text-center space-y-3">
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="avatar"
+             class="w-20 h-20 rounded-full border-2 border-gray-600"/>
+        <div>
+          <h3 class="text-lg font-bold text-white">{{ student[1] }}</h3>
+          <p class="text-gray-400 text-sm">ID: {{ student[0] }}</p>
+          <p class="text-gray-400 text-sm">{{ student[2] or 'Not Assigned' }}</p>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-1.5">
+          <div class="bg-gradient h-1.5 rounded-full" style="width: 75%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENROLL FORM -->
+    <div class="glass p-5 rounded-xl hover-lift fade-in stagger-2">
+      <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+        <span>📝</span>
+        Enroll in Course
+      </h3>
+      <form method="POST" action="/student/enroll" class="space-y-3">
+        <input type="text" name="course_id" placeholder="Course ID (e.g., CS101)"
+               class="w-full glass-card text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+               required/>
+        <button type="submit" class="w-full bg-gradient hover:opacity-90 text-white py-2 rounded-lg font-semibold transition-opacity">
+          Enroll Now
+        </button>
+      </form>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="glass p-5 rounded-xl hover-lift fade-in stagger-3">
+      <h3 class="text-lg font-bold mb-3">⚡ Quick Actions</h3>
+      <div class="space-y-2">
+        <button class="w-full glass-card hover-lift text-left p-3 rounded-lg flex items-center gap-3">
+          <span>📚</span>
+          <span class="text-sm">View Course Materials</span>
+        </button>
+        <button class="w-full glass-card hover-lift text-left p-3 rounded-lg flex items-center gap-3">
+          <span>📅</span>
+          <span class="text-sm">Academic Calendar</span>
+        </button>
+        <button class="w-full glass-card hover-lift text-left p-3 rounded-lg flex items-center gap-3">
+          <span>💬</span>
+          <span class="text-sm">Class Discussions</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER CONTENT -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- ENROLLED COURSES -->
+    <div class="glass p-5 rounded-xl hover-lift fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">📚 My Courses</h3>
+        <span class="text-sm text-gray-400">{{ courses|length }} enrolled</span>
+      </div>
+      {% if courses %}
+        <div class="grid md:grid-cols-2 gap-3">
+          {% for c in courses %}
+          <div class="glass-card p-3 rounded-lg border border-gray-700 hover-lift">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold text-white">{{ c }}</span>
+              <span class="status-badge status-submitted">Active</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-1.5">
+              <div class="bg-gradient h-1.5 rounded-full" style="width: 85%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-1">
+              <span>Progress</span>
+              <span>85%</span>
+            </div>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+      {% else %}
+        <div class="text-center py-6">
+          <p class="text-gray-500">No enrolled courses yet.</p>
+        </div>
+      {% endif %}
     </div>
-    {% else %}
-      <p class="text-gray-500">No assignments yet.</p>
-    {% endif %}
-  </section>
 
-  <!-- Performance Chart -->
-  <section class="glass p-6 rounded-2xl col-span-2 glow">
-    <h2 class="text-xl font-semibold mb-4">📊 Performance Overview</h2>
-    <canvas id="gradeChart" height="100"></canvas>
-  </section>
+    <!-- ASSIGNMENTS TABLE -->
+    <div class="glass p-5 rounded-xl hover-lift fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">📂 Assignments</h3>
+        <span class="text-sm text-gray-400">{{ assignments|length }} total</span>
+      </div>
+      
+      {% if assignments %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 bg-gray-800/30">
+            <tr>
+              <th class="py-2 px-3 text-left">Assignment</th>
+              <th class="py-2 px-3 text-left">Due Date</th>
+              <th class="py-2 px-3 text-left">Status</th>
+              <th class="py-2 px-3 text-left">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr class="border-b border-gray-700/30 hover:bg-gray-700/20">
+              <td class="py-3 px-3 font-medium">{{ a[1] }}</td>
+              <td class="py-3 px-3 text-gray-400">{{ a[2] }}</td>
+              <td class="py-3 px-3">
+                {% if a[3] %}
+                  {% if a[4] %}
+                    <span class="status-badge status-graded">Graded</span>
+                  {% else %}
+                    <span class="status-badge status-submitted">Submitted</span>
+                  {% endif %}
+                {% else %}
+                  <span class="status-badge status-due">Due</span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-3">
+                {% if a[4] %}
+                  <span class="font-semibold text-green-400">{{ a[4] }}/100</span>
+                {% elif a[3] %}
+                  <span class="text-gray-400">-</span>
+                {% else %}
+                  <form method="POST" action="/student/upload" enctype="multipart/form-data" class="flex items-center gap-2">
+                    <input type="hidden" name="assignment_id" value="{{ a[0] }}">
+                    <input type="file" name="file" class="text-xs w-24 bg-gray-700 rounded px-2 py-1"/>
+                    <button type="submit" class="bg-gradient text-white px-2 py-1 rounded text-xs">
+                      Submit
+                    </button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="text-center py-6">
+          <p class="text-gray-500">No assignments available.</p>
+        </div>
+      {% endif %}
+    </div>
 
-  <!-- Course Averages -->
-  <section class="glass p-6 rounded-2xl glow">
-    <h2 class="text-xl font-semibold mb-4">📈 Course Averages</h2>
-    {% if chart_labels %}
-    <ul class="space-y-3">
-      {% for label, value in chart_labels|zip(chart_data) %}
-      <li class="flex justify-between items-center bg-[#1b1b1b] p-3 rounded-md hover:bg-[#252525] transition">
-        <span>{{ label }}</span>
-        <span class="font-semibold text-blue-400">{{ value }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-      <p class="text-gray-500">No graded courses yet.</p>
-    {% endif %}
-  </section>
+    <!-- PERFORMANCE DASHBOARD -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- PERFORMANCE CHART -->
+      <div class="glass p-5 rounded-xl hover-lift fade-in">
+        <h3 class="text-lg font-bold mb-4">📊 Performance</h3>
+        <div class="h-48">
+          <canvas id="gradeChart"></canvas>
+        </div>
+      </div>
 
-  <!-- Notifications -->
-  <section class="glass p-6 rounded-2xl glow">
-    <h2 class="text-xl font-semibold mb-4">🔔 Notifications</h2>
-    {% if notifications %}
-      <div class="space-y-2 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-[#333]">
-        {% for n in notifications %}
-        <div class="bg-[#1b1b1b] border border-[#333] p-3 rounded-md">
-          <p>{{ n[0] }}</p>
-          <small class="text-gray-500">{{ n[1] }}</small>
+      <!-- UPCOMING DEADLINES -->
+      <div class="glass p-5 rounded-xl hover-lift fade-in">
+        <h3 class="text-lg font-bold mb-4">⏰ Upcoming</h3>
+        <div class="space-y-3">
+          {% for a in assignments if a[3] is none %}
+          <div class="flex items-center justify-between p-2 glass-card rounded-lg">
+            <div>
+              <p class="text-sm font-medium">{{ a[1] }}</p>
+              <p class="text-xs text-gray-400">{{ a[2] }}</p>
+            </div>
+            <span class="status-badge status-due">Due</span>
+          </div>
+          {% else %}
+          <p class="text-gray-500 text-sm">No upcoming deadlines</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM SECTION -->
+<div class="px-4 sm:px-6 lg:px-8 mb-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- COURSE AVERAGES -->
+  <div class="glass p-5 rounded-xl hover-lift fade-in">
+    <h3 class="text-lg font-bold mb-4">📈 Course Averages</h3>
+    {% if chart_labels and chart_data %}
+      <div class="space-y-3">
+        {% for label, value in chart_labels|zip(chart_data) %}
+        <div class="flex items-center justify-between p-3 glass-card rounded-lg hover-lift">
+          <span class="font-medium">{{ label }}</span>
+          <div class="text-right">
+            <div class="font-bold text-blue-400">{{ value }}%</div>
+            <div class="text-xs text-gray-400">Average</div>
+          </div>
         </div>
         {% endfor %}
       </div>
     {% else %}
-      <p class="text-gray-500 italic">No new notifications.</p>
+      <p class="text-gray-500 text-sm">No graded courses yet.</p>
     {% endif %}
-  </section>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="glass p-5 rounded-xl hover-lift fade-in">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">🔔 Notifications</h3>
+      {% if notifications %}
+      <span class="text-xs status-badge status-due">{{ notifications|length }} new</span>
+      {% endif %}
+    </div>
+    
+    {% if notifications %}
+      <div class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+        {% for n in notifications %}
+        <div class="p-3 glass-card rounded-lg border-l-2 border-blue-500">
+          <p class="text-sm">{{ n[0] }}</p>
+          <small class="text-gray-400">{{ n[1] }}</small>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-gray-500 text-sm">No new notifications.</p>
+    {% endif %}
+  </div>
 </div>
 
-<script>
-const chartLabels = JSON.parse('{{ chart_labels | tojson | safe }}');
-const chartData = JSON.parse('{{ chart_data | tojson | safe }}');
+<!-- RECENT ACTIVITY -->
+<div class="px-4 sm:px-6 lg:px-8 mb-12">
+  <div class="glass p-5 rounded-xl hover-lift fade-in">
+    <h3 class="text-lg font-bold mb-4">📋 Recent Activity</h3>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="glass-card p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">📚</div>
+        <div class="text-sm text-gray-400">Courses Active</div>
+        <div class="text-xl font-bold text-white">{{ courses|length if courses else 0 }}</div>
+      </div>
+      <div class="glass-card p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">✅</div>
+        <div class="text-sm text-gray-400">Completed</div>
+        <div class="text-xl font-bold text-green-400">{{ assignments|selectattr('4','ne',None)|list|length if assignments else 0 }}</div>
+      </div>
+      <div class="glass-card p-4 rounded-lg text-center">
+        <div class="text-2xl mb-2">⏳</div>
+        <div class="text-sm text-gray-400">In Progress</div>
+        <div class="text-xl font-bold text-yellow-400">{{ assignments|selectattr('3','ne',None)|selectattr('4','eq',None)|list|length if assignments else 0 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-new Chart(document.getElementById('gradeChart'), {
-  type: 'line',
-  data: {
-    labels: chartLabels,
-    datasets: [{
-      label: 'Marks',
-      data: chartData,
-      fill: true,
-      borderColor: '#6366f1',
-      backgroundColor: 'rgba(99,102,241,0.1)',
-      tension: 0.4,
-      borderWidth: 2,
-      pointBackgroundColor: '#818cf8'
-    }]
-  },
-  options: {
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { ticks: { color: '#ccc' }, grid: { color: '#2a2a2a' } },
-      x: { ticks: { color: '#ccc' }, grid: { display: false } }
+<!-- FOOTER -->
+<footer class="bg-gray-900 border-t border-gray-800 py-6 mt-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <p class="text-gray-400 text-sm">© 2024 EduSync Portal • Optimized for Performance</p>
+  </div>
+</footer>
+
+<!-- OPTIMIZED SCRIPTS -->
+<script>
+  // Initialize with minimal animations
+  document.addEventListener('DOMContentLoaded', function() {
+    // Performance Chart with fixed dimensions
+    const labels = JSON.parse('{{ chart_labels | tojson | safe }}');
+    const data = JSON.parse('{{ chart_data | tojson | safe }}');
+    
+    if (labels.length > 0 && data.length > 0) {
+      const ctx = document.getElementById('gradeChart').getContext('2d');
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Scores',
+            data: data,
+            fill: false,
+            borderColor: '#6366f1',
+            pointBackgroundColor: '#6366f1',
+            tension: 0.4,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              ticks: { color: '#9ca3af' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#9ca3af' }
+            }
+          },
+          animation: {
+            duration: 1000 // Reduced animation time
+          }
+        }
+      });
     }
-  }
-});
+
+    // Simple search functionality
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+      let searchTimeout;
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          const query = e.target.value.toLowerCase();
+          // Implement search logic here
+        }, 300);
+      });
+    }
+
+    // Add hover effects efficiently
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    });
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+      observer.observe(el);
+    });
+  });
+
+  // Simple fade-in animation
+  const fadeElements = document.querySelectorAll('.fade-in');
+  fadeElements.forEach((el, index) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, index * 100);
+  });
 </script>
 
-{% endblock %}
+{% endblock %}  
