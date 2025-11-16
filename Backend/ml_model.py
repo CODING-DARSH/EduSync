@@ -1,4 +1,3 @@
-# ml_model.py (cleaned, lookback = 90 days)
 import os
 import joblib
 import numpy as np
@@ -231,13 +230,23 @@ def predict_all_students(threshold=RISK_SCORE_THRESHOLD, notify=True):
                 already_notified = row and row[0][0] is True
 
                 if not already_notified:
-                    msg = (
-                        f"Dear student,\n\n"
-                        f"Our system detected that your academic risk score is {r['risk_score']:.2f} ({r['risk_label']}). "
-                        f"This means you may require additional attention in academics or attendance.\n"
-                        f"Please reach out to your teacher or academic advisor for support.\n\n"
-                        f"Regards,\nStudent Performance System"
-                        )
+                    msg = f"""
+Dear {sname},
+
+Our system detected that your academic risk score is {r['risk_score']:.2f}, which places you in the **{r['risk_label'].upper()} RISK** category.
+
+📊 Performance Summary:
+• Average Marks: {r['avg_marks']}
+• Attendance (last 90 days): {r['attendance_pct']}%
+• Low-Scoring Subjects (<40 marks): {r['below_count']}
+
+This means you may require additional attention in academics or attendance.
+Please reach out to your teacher or academic advisor for support.
+
+Regards,
+EduSync Portal
+"""
+
 
 
                     # save notification

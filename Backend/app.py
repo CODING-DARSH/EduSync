@@ -3,6 +3,15 @@ from flask import Flask, render_template, request, redirect, session, jsonify, s
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from ml_model import predict_all_students
+from flask import Flask, render_template, request, redirect, session, jsonify
+from ml_model import predict_all_students, predict_student_risk, train_and_save_model, load_model
+from models import Teacher, TeacherPost, Notification, AttendanceModel, send_email, send_notification_contacts_for_student
+from db import execute_query
+import json
+from flask import Blueprint, render_template, request, jsonify, session
+from db import execute_query
+from datetime import datetime
+
 
 from models import (
     Student,
@@ -35,7 +44,11 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # ---------------- HOME ----------------
 @app.route('/')
 def home():
+    return render_template('landing.html')
+@app.route('/login')
+def login_page():
     return render_template('login.html')
+
 
 # ---------------- STUDENT UPLOAD ----------------
 @app.route('/student/upload', methods=['POST'])
@@ -73,7 +86,7 @@ def student_register():
             request.form['phone'],
             request.form['password']
         )
-        return f"Registration successful! Your student ID is {student_id}. <a href='/'>Login</a>"
+        return render_template("student_register_success.html", student_id=student_id)
     return render_template('register.html')
 
 # ---------------- STUDENT LOGIN ----------------
@@ -85,7 +98,7 @@ def student_login():
     if user:
         session['student_id'] = user[0]
         return redirect('/student/dashboard')
-    return "Invalid credentials"
+    return redirect("/login?error=student")
 
 # ---------------- STUDENT REQUEST OTP ----------------
 @app.route('/student/request-otp', methods=['POST'])
@@ -223,7 +236,8 @@ def teacher_login():
     if user:
         session['teacher_id'] = user[0]
         return redirect('/teacher/dashboard')
-    return "Invalid credentials"
+    return redirect("/login?error=teacher")
+
 
 # ---------------- TEACHER REGISTER ----------------
 @app.route('/teacher/register', methods=['GET', 'POST'])
@@ -239,15 +253,11 @@ def teacher_register():
 def teacher_dashboard():
     if 'teacher_id' not in session:
         return redirect('/')
-
     tid = session['teacher_id']
+    teacher_row = execute_query("SELECT id, name FROM Teachers WHERE id=%s", (tid,), fetch=True)
+    teacher = teacher_row[0] if teacher_row else None
 
-    teacher = execute_query(
-        "SELECT id, name FROM Teachers WHERE id=%s",
-        (tid,), fetch=True
-    )
-    teacher = teacher[0] if teacher else None
-
+    # The students query you already had
     students = execute_query("""
         SELECT s.id, s.name, c.course_name, c.id
         FROM Students s
@@ -256,64 +266,481 @@ def teacher_dashboard():
         JOIN TeacherCourses tc ON c.id = tc.course_id
         WHERE tc.teacher_id = %s
     """, (tid,), fetch=True)
-
-    courses = Teacher.get_courses(tid)
-
-    assignments = execute_query("""
-        SELECT id, title, due_date
-        FROM Assignments
-        WHERE teacher_id = %s
-        ORDER BY due_date DESC
+    events = execute_query("""
+    SELECT title, event_date 
+    FROM TeacherCalendar
+    WHERE teacher_id = %s
+    ORDER BY event_date ASC
     """, (tid,), fetch=True)
 
-    posts = TeacherPost.get_for_teacher(tid)
 
-    # ---------------------- ATTENDANCE SUMMARY ----------------------
+
+    courses = Teacher.get_courses(tid)
+    assignments = execute_query("SELECT id, title, due_date FROM Assignments WHERE teacher_id=%s ORDER BY due_date DESC", (tid,), fetch=True)
+    posts = TeacherPost.get_for_teacher(tid)
+    notifications = TeacherNotification.get_for_teacher(tid)  # or TeacherNotification.get_for_teacher
+
+    # Attendance summary (existing code)
     attendance_summary = []
     for cid, cname in courses or []:
         data = execute_query("""
-            SELECT s.name, ROUND(AVG(a.present)*100, 2)
+            SELECT s.name, ROUND(AVG(a.present)*100,2)
             FROM Attendance a
             JOIN Students s ON a.student_id = s.id
             WHERE a.course_id = %s
             GROUP BY s.name
             ORDER BY s.name
         """, (cid,), fetch=True)
-
         attendance_summary.append({
-            'course_id': cid,
-            'course_name': cname,
-            'records': [
-                {'name': r[0], 'percent': float(r[1] or 0)}
-                for r in data or []
-            ]
+            'course_id': cid, 'course_name': cname,
+            'records': [{'name': r[0], 'percent': float(r[1] or 0)} for r in data or []]
         })
 
-    notifications = TeacherNotification.get_for_teacher(tid)
-
-    # ------------------------- ML PREDICTION SECTION -------------------------
+    # ML predictions: get cached model predictions, do not send email here
     try:
-        ml_predictions = predict_all_students(threshold=0.6, notify=False)
-        at_risk_list = [
-            p for p in ml_predictions
-            if p["risk_label"] in ("high", "medium")
-        ]
+        preds = predict_all_students(threshold=0.6, notify=False)  # returns list
+        at_risk = [p for p in preds if p['risk_label'] in ('high', 'medium')]
     except Exception as e:
         print("ML ERROR:", e)
-        at_risk_list = []
-    # -------------------------------------------------------------------------
+        preds = []
+        at_risk = []
 
-    return render_template(
-        'teacher_dashboard.html',
-        teacher=teacher,
-        students=students,
-        courses=courses,
-        assignments=assignments,
-        posts=posts,
-        notifications=notifications,
-        attendance_summary=attendance_summary,
-        at_risk_list=at_risk_list      # <-- SEND TO FRONTEND
-    )
+    return render_template('teacher_dashboard.html',
+                           teacher=teacher,
+                           students=students,
+                           courses=courses,
+                           assignments=assignments,
+                           posts=posts,
+                           notifications=notifications,
+                           attendance_summary=attendance_summary,
+                            events=events,
+                           at_risk_list=at_risk)
+@app.route('/teacher/risk/reset_flags', methods=['POST'])
+def reset_risk_flags():
+    execute_query("UPDATE StudentRisk SET notified=FALSE")
+    return jsonify({"message": "All notification flags have been reset"})
+
+from ml_model import predict_all_students
+
+@app.route('/api/risk/scan')
+def api_risk_scan():
+    results = predict_all_students(notify=False)   # DO NOT send emails
+    return jsonify(results)
+@app.route('/api/risk/send', methods=['POST'])
+def api_risk_send():
+    data = request.json
+    student_ids = data.get("students", [])
+
+    sent = 0
+    errs = []
+
+    for sid in student_ids:
+
+        # fetch latest risk entry
+        row = execute_query("""
+            SELECT s.email, s.parent_email, sr.id, s.name, sr.risk_score, sr.risk_label
+            FROM Students s
+            JOIN StudentRisk sr ON s.id = sr.student_id
+            WHERE s.id = %s
+            ORDER BY sr.id DESC
+            LIMIT 1
+        """, (sid,), fetch=True)
+
+        if not row:
+            continue
+
+        email, parent, risk_id, sname, risk_score, risk_label = row[0]
+
+        # fetch more ML features
+        avg_marks = execute_query("SELECT COALESCE(AVG(marks),0) FROM StudentCourses WHERE student_id=%s", (sid,), fetch=True)[0][0]
+        attendance = execute_query("""
+            SELECT COALESCE(AVG(present)::float*100,0)
+            FROM Attendance
+            WHERE student_id=%s AND date_marked >= NOW() - interval '90 days'
+        """, (sid,), fetch=True)[0][0]
+        below_count = execute_query("""
+            SELECT COUNT(*) FROM StudentCourses WHERE student_id=%s AND marks < 40
+        """, (sid,), fetch=True)[0][0]
+
+        try:
+            msg = f"""
+Dear {sname},
+
+Our system detected that your academic risk score is {risk_score:.2f}, which places you in the **{risk_label.upper()} RISK** category.
+
+📊 Performance Summary:
+• Average Marks: {avg_marks}
+• Attendance (last 90 days): {attendance:.2f}%
+• Low-Scoring Subjects (<40 marks): {below_count}
+
+This means you may require additional attention in academics or attendance.
+Please reach out to your teacher or academic advisor for support.
+
+Regards,
+EduSync Portal
+"""
+
+            if email:
+                send_email(email, "Academic Risk Alert", msg)
+
+            if parent:
+                send_email(parent, "Risk Alert for Your Child", msg)
+
+            execute_query("UPDATE StudentRisk SET notified=TRUE WHERE id=%s", (risk_id,))
+
+            sent += 1
+
+        except Exception as e:
+            errs.append(str(e))
+
+    return jsonify({"sent": sent, "errors": errs})
+
+# Returns analytics summary for charts
+@app.route('/api/analytics')
+def api_analytics():
+    # Simple aggregated analytics for frontend charts
+    # avg attendance across all courses (lookback 90 days)
+    rows = execute_query("""
+        SELECT AVG(t.avg_att) FROM (
+          SELECT ROUND(AVG(a.present)*100,2) as avg_att
+          FROM Attendance a
+          GROUP BY a.student_id
+        ) t
+    """, fetch=True)
+    avg_att = float(rows[0][0]) if rows and rows[0][0] is not None else 0.0
+
+    # avg marks across StudentCourses
+    rows2 = execute_query("SELECT AVG(marks) FROM StudentCourses WHERE marks IS NOT NULL", fetch=True)
+    avg_marks = float(rows2[0][0]) if rows2 and rows2[0][0] is not None else 0.0
+
+    # simple timeseries placeholder -> return past 7 days labels
+    import datetime
+    labels = []
+    attendance_series = []
+    marks_series = []
+    at_risk_series = []
+    for d in range(6, -1, -1):
+        day = (datetime.date.today() - datetime.timedelta(days=d)).strftime('%b %d')
+        labels.append(day)
+        attendance_series.append(round(avg_att * (0.9 + 0.2 * (d/6)), 2))  # synthetic for display
+        marks_series.append(round(avg_marks * (0.95 + 0.1 * (d/6)), 2))
+        at_risk_series.append( int(max(0, 2 - d/3)) )  # synthetic
+
+    # at-risk count
+    preds = predict_all_students(threshold=0.6, notify=False)
+    at_risk_count = len([p for p in preds if p['risk_label'] in ('high','medium')])
+
+    return jsonify({
+        "avg_attendance": avg_att,
+        "avg_marks": avg_marks,
+        "labels": labels,
+        "attendance_series": attendance_series,
+        "marks_series": marks_series,
+        "at_risk_series": at_risk_series,
+        "at_risk_count": at_risk_count
+    })
+@app.route("/teacher/course/<int:course_id>/marks")
+def teacher_course_marks(course_id):
+    if "teacher_id" not in session:
+        return redirect("/")
+
+    tid = session["teacher_id"]
+
+    # Check teacher teaches the course
+    check = execute_query("""
+        SELECT 1 FROM TeacherCourses WHERE teacher_id=%s AND course_id=%s
+    """, (tid, course_id), fetch=True)
+
+    if not check:
+        return "Unauthorized", 403
+
+    students = execute_query("""
+        SELECT s.id, s.name, sc.marks
+        FROM Students s
+        JOIN StudentCourses sc ON s.id=sc.student_id
+        WHERE sc.course_id=%s
+        ORDER BY s.name
+    """, (course_id,), fetch=True)
+
+    course = execute_query("SELECT course_name FROM Courses WHERE id=%s",
+                           (course_id,), fetch=True)
+
+    return render_template("teacher_course_marks.html",
+                           rows=students,
+                           course_id=course_id,
+                           course_name=course[0][0] if course else "Course")
+@app.route("/teacher/course/<int:course_id>/marks/update", methods=["POST"])
+def teacher_update_marks(course_id):
+
+    # 1) Try JSON first (existing logic)
+    data = request.get_json(silent=True)
+
+    if data and "updates" in data:
+        updates = data["updates"]
+        for entry in updates:
+            sid = entry["student_id"]
+            marks = entry["marks"]
+            execute_query("""
+                UPDATE StudentCourses
+                SET marks=%s
+                WHERE student_id=%s AND course_id=%s
+            """, (marks, sid, course_id))
+        return jsonify({"status": "success"})
+
+    # 2) Handle normal HTML form POST (your actual use case)
+    for key, value in request.form.items():
+        if key.startswith("marks_"):
+            sid = key.split("_")[1]
+            marks = value if value != "" else None
+            execute_query("""
+                UPDATE StudentCourses
+                SET marks=%s
+                WHERE student_id=%s AND course_id=%s
+            """, (marks, sid, course_id))
+
+    return redirect(f"/teacher/course/{course_id}/marks?saved=1")
+
+
+# Activity feed
+@app.route('/api/activity_recent')
+def api_activity_recent():
+    rows = execute_query("SELECT message, to_char(created_at,'YYYY-MM-DD HH24:MI') FROM TeacherPosts ORDER BY created_at DESC LIMIT 8", fetch=True)
+    data = [{"message": r[0], "when": r[1]} for r in rows] if rows else []
+    return jsonify(data)
+
+# Attendance heatmap data per course
+@app.route('/api/attendance_heatmap')
+def api_attendance_heatmap():
+    course_id = request.args.get('course_id')
+    if not course_id:
+        return jsonify({"error":"course_id required"}), 400
+
+    # Return simplified heatmap: list of { student_id, name, daily: [ {date, present} ... ] }
+    # We'll limit to last 30 days for payload sizings
+    rows = execute_query("""
+        SELECT s.id, s.name
+        FROM Students s
+        JOIN StudentCourses sc ON s.id=sc.student_id
+        WHERE sc.course_id=%s
+        ORDER BY s.name
+    """, (course_id,), fetch=True)
+    students = rows or []
+
+    import datetime
+    start = datetime.date.today() - datetime.timedelta(days=29)
+    dates = [(start + datetime.timedelta(days=i)).isoformat() for i in range(30)]
+
+    payload = []
+    for sid, name in students:
+        q = """
+          SELECT DATE(date_marked), present
+          FROM Attendance
+          WHERE student_id=%s AND course_id=%s AND date_marked >= %s
+        """
+        rows2 = execute_query(q, (sid, course_id, start), fetch=True)
+        present_map = { str(r[0]): int(r[1]) for r in (rows2 or []) }
+        daily = [ present_map.get(d, 0) for d in dates ]
+        payload.append({"student_id": sid, "name": name, "daily": daily})
+    return jsonify({"dates": dates, "students": payload})
+
+# Predict single student (returns feature + risk)
+@app.route('/api/predict_student/<int:student_id>')
+def api_predict_student(student_id):
+    try:
+        r = predict_student_risk(student_id, None)
+        return jsonify(r)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Predict all students (optionally notify)
+@app.route('/api/predict_all')
+def api_predict_all():
+    notify = request.args.get('notify', 'false').lower() == 'true'
+    try:
+        preds = predict_all_students(threshold=0.6, notify=notify)
+        return jsonify(preds)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+# POST route to send one-time risk notifications to currently at-risk students
+@app.route('/teacher/risk/notify', methods=['POST'])
+def teacher_risk_notify():
+    if 'teacher_id' not in session:
+        return jsonify({"error":"not authorized"}), 401
+    try:
+        preds = predict_all_students(threshold=0.6, notify=False)
+        # send only to those currently high or medium risk and not notified previously
+        sent = 0
+        for p in preds:
+            sid = p['student_id']
+            if p['risk_label'] not in ('high','medium'): 
+                continue
+            # check last StudentRisk notified flag (if exists)
+            row = execute_query("SELECT notified FROM StudentRisk WHERE student_id=%s ORDER BY id DESC LIMIT 1", (sid,), fetch=True)
+            already = bool(row and row[0][0])
+            if already:
+                continue
+            # make message
+            msg = f"⚠️ Risk alert: Your risk score is {p['risk_score']:.2f} ({p['risk_label']}). Avg marks: {p['avg_marks']:.1f}. Attendance: {p['attendance_pct']:.1f}%."
+            # create notification row
+            execute_query("INSERT INTO Notifications (student_id, message, created_at) VALUES (%s, %s, NOW())", (sid, msg))
+            # send email (models.send_email will print in dev mode if env not set)
+            if p.get('email'):
+                try:
+                    send_email(p.get('email'), "Risk alert from EduSync", msg)
+                except Exception as e:
+                    print("send_email error", e)
+            # update StudentRisk notified flag for the latest entry (safe UPDATE using subquery)
+            try:
+                execute_query("""
+                    UPDATE StudentRisk SET notified=TRUE
+                    WHERE id = (
+                      SELECT id FROM StudentRisk WHERE student_id=%s ORDER BY id DESC LIMIT 1
+                    )
+                """, (sid,))
+            except Exception as e:
+                print("Failed to update StudentRisk notified flag:", e)
+            sent += 1
+        return jsonify({"message": f"Notifications sent: {sent}"})
+    except Exception as e:
+        print("teacher_risk_notify error:", e)
+        return jsonify({"error": str(e)}), 500
+calendar_bp = Blueprint('calendar', __name__)
+
+# Render the full calendar page (teacher-only)
+@calendar_bp.route('/teacher/calendar')
+def teacher_calendar():
+    if 'teacher_id' not in session:
+        return redirect('/')
+    tid = session['teacher_id']
+    teacher = execute_query("SELECT id, name FROM Teachers WHERE id=%s", (tid,), fetch=True)
+    teacher = teacher[0] if teacher else None
+    # courses used in sidebar (if you want)
+    courses = execute_query("""
+        SELECT c.id, c.course_name
+        FROM Courses c
+        JOIN TeacherCourses tc ON c.id = tc.course_id
+        WHERE tc.teacher_id = %s
+    """, (tid,), fetch=True)
+    return render_template('teacher_calendar.html', teacher=teacher, courses=courses or [])
+
+# API: fetch events between start & end (FullCalendar sends ISO dates)
+@calendar_bp.route('/api/calendar/events')
+def api_calendar_events():
+    if 'teacher_id' not in session:
+        return jsonify([]), 401
+    tid = session['teacher_id']
+    start = request.args.get('start')  # ISO date/time
+    end = request.args.get('end')
+    try:
+        # parse to guard format; DB will filter by timestamps
+        s = datetime.fromisoformat(start)
+        e = datetime.fromisoformat(end)
+    except Exception:
+        return jsonify({"error": "invalid start/end"}), 400
+
+    q = """
+      SELECT id, title, description, start_ts, end_ts, all_day, color
+      FROM TeacherCalendar
+      WHERE teacher_id=%s AND start_ts >= %s AND start_ts <= %s
+      ORDER BY start_ts
+    """
+    rows = execute_query(q, (tid, s, e), fetch=True)
+    events = []
+    for r in rows or []:
+        eid, title, desc, start_ts, end_ts, all_day, color = r
+        events.append({
+            "id": str(eid),
+            "title": title,
+            "start": start_ts.isoformat(),
+            "end": end_ts.isoformat(),
+            "allDay": bool(all_day),
+            "color": color,
+            "extendedProps": {"description": desc or ""}
+        })
+    return jsonify(events)
+
+# API: create event
+@calendar_bp.route('/api/calendar/event', methods=['POST'])
+def api_calendar_create_event():
+    if 'teacher_id' not in session:
+        return jsonify({"error": "unauth"}), 401
+    tid = session['teacher_id']
+    body = request.get_json() or {}
+    title = body.get('title') or 'Untitled'
+    description = body.get('description') or ''
+    start = body.get('start')
+    end = body.get('end') or start
+    all_day = bool(body.get('allDay', False))
+    color = body.get('color', '#10b981')
+
+    try:
+        start_dt = datetime.fromisoformat(start)
+        end_dt = datetime.fromisoformat(end)
+    except Exception:
+        return jsonify({"error": "invalid datetime"}), 400
+
+    q = """
+        INSERT INTO TeacherCalendar (teacher_id, title, description, start_ts, end_ts, all_day, color, created_at, updated_at)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,NOW(),NOW()) RETURNING id
+    """
+    new_id = execute_query(q, (tid, title, description, start_dt, end_dt, all_day, color), returning=True)
+    return jsonify({"id": new_id})
+
+# API: update event (move/resize or edit)
+@calendar_bp.route('/api/calendar/event/<int:event_id>', methods=['PUT'])
+def api_calendar_update_event(event_id):
+    if 'teacher_id' not in session:
+        return jsonify({"error":"unauth"}), 401
+    tid = session['teacher_id']
+    body = request.get_json() or {}
+    title = body.get('title')
+    description = body.get('description')
+    start = body.get('start')
+    end = body.get('end')
+    all_day = body.get('allDay')
+    color = body.get('color')
+
+    # build dynamic update
+    updates = []
+    params = []
+    if title is not None:
+        updates.append("title=%s"); params.append(title)
+    if description is not None:
+        updates.append("description=%s"); params.append(description)
+    if start is not None:
+        try:
+            start_dt = datetime.fromisoformat(start)
+        except Exception:
+            return jsonify({"error":"bad start"}), 400
+        updates.append("start_ts=%s"); params.append(start_dt)
+    if end is not None:
+        try:
+            end_dt = datetime.fromisoformat(end)
+        except Exception:
+            return jsonify({"error":"bad end"}), 400
+        updates.append("end_ts=%s"); params.append(end_dt)
+    if all_day is not None:
+        updates.append("all_day=%s"); params.append(bool(all_day))
+    if color is not None:
+        updates.append("color=%s"); params.append(color)
+
+    if not updates:
+        return jsonify({"ok": True, "message": "nothing changed"})
+
+    params.extend([datetime.now(), event_id, tid])
+    q = f"UPDATE TeacherCalendar SET {', '.join(updates)}, updated_at=%s WHERE id=%s AND teacher_id=%s"
+    execute_query(q, tuple(params))
+    return jsonify({"ok": True})
+
+# API: delete event
+@calendar_bp.route('/api/calendar/event/<int:event_id>', methods=['DELETE'])
+def api_calendar_delete_event(event_id):
+    if 'teacher_id' not in session:
+        return jsonify({"error":"unauth"}), 401
+    tid = session['teacher_id']
+    q = "DELETE FROM TeacherCalendar WHERE id=%s AND teacher_id=%s"
+    execute_query(q, (event_id, tid))
+    return jsonify({"ok": True})
 
 
 
@@ -380,7 +807,10 @@ def grade_submission():
 def teacher_attendance_view(course_id):
     date = request.args.get('date') or datetime.today().strftime('%Y-%m-%d')
     students = AttendanceModel.get_course_attendance_for_date(course_id, date)
-    return render_template('teacher_mark_attendance.html', course_id=course_id, date=date, students=students)
+    course = execute_query("SELECT course_name FROM Courses WHERE id=%s", (course_id,), fetch=True)
+    course_name = course[0][0] if course else "Course"
+
+    return render_template('teacher_mark_attendance.html', course_id=course_id,course_name=course_name, date=date, students=students)
 
 # ---------------- ATTENDANCE MARK ----------------
 @app.route('/teacher/attendance/<int:course_id>', methods=['POST'])
