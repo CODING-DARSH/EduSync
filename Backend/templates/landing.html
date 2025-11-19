@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduSync – Learning Management System</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- AOS Animation Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      color: #f7fafc;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.98), rgba(45, 55, 72, 0.95));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo-container {
+      background: linear-gradient(135deg, #e2e8f0, #f7fafc);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .glass-card {
+      background: linear-gradient(135deg, rgba(45, 55, 72, 0.4), rgba(26, 26, 26, 0.6));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-hover {
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-link {
+      position: relative;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      color: #e2e8f0;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -6px;
+      left: 0;
+      background: linear-gradient(90deg, #e2e8f0, #f7fafc);
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .nav-link:hover {
+      color: #f7fafc;
+    }
+
+    .dropdown-menu {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, rgba(45, 55, 72, 0.95), rgba(26, 26, 26, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .dropdown.open .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .login-btn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
+      color: #1a1a1a;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
+    }
+
+    .feature-icon {
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    .floating {
+      animation: floating 6s ease-in-out infinite;
+    }
+
+    @keyframes floating {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-15px) rotate(1deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    .pulse {
+      animation: pulse 3s infinite;
+    }
+
+    @keyframes pulse {
+      0% { 
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.15);
+      }
+      70% { 
+        box-shadow: 0 0 0 12px rgba(255, 255, 255, 0);
+      }
+      100% { 
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    .hero-btn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+      color: #1a1a1a;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .hero-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.95));
+    }
+
+    .dashboard-card {
+      background: linear-gradient(135deg, rgba(45, 55, 72, 0.5), rgba(26, 26, 26, 0.7));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, rgba(45, 55, 72, 0.6), rgba(26, 26, 26, 0.8));
+    }
+
+    .glow {
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Ensure all text is visible */
+    .text-pearl { color: #f7fafc !important; }
+    .text-silver { color: #e2e8f0 !important; }
+    .text-smoke { color: #718096 !important; }
+    .text-charcoal { color: #1a1a1a !important; }
+    
+    /* Fix for ALL Font Awesome icons */
+    .fas, .fa {
+      color: inherit !important;
+    }
+
+    /* Specific fix for white background icons */
+    .bg-white .fas,
+    .bg-white .fa {
+      color: #1a1a1a !important;
+    }
+
+    /* Specific fix for logo icon */
+    .logo-container .fas {
+      color: #1a1a1a !important;
+    }
+
+    /* Fix for feature section icons */
+    .feature-icon .fas {
+      color: #f7fafc !important;
+    }
+
+    /* Fix for dropdown menu icons */
+    .dropdown-menu .fas {
+      color: #e2e8f0 !important;
+    }
+  </style>
+</head>
+
+<body class="antialiased">
+
+  <!-- ENHANCED NAVBAR -->
+ <nav class="navbar fixed top-0 left-0 w-full flex items-center px-8 py-5 z-50">
+    <!-- LEFT: ENHANCED LOGO -->
+    <div class="flex items-center gap-4">
+      <div class="logo-container w-12 h-12 rounded-xl flex items-center justify-center">
+        <i class="fas fa-graduation-cap text-charcoal text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-pearl leading-none">EduSync</h1>
+        <p class="text-sm text-silver leading-none mt-1">Intelligent Learning Platform</p>
+      </div>
+    </div>
+
+    <!-- CENTER: ENHANCED NAVIGATION -->
+     <!-- CENTER: ENHANCED NAVIGATION -->
+    <div class="flex items-center space-x-10 ml-auto mr-8">
+      <a href="#" class="nav-link text-base">Home</a>
+      <a href="#features" class="nav-link text-base">Features</a>
+      <a href="#dashboard" class="nav-link text-base">Dashboards</a>
+      <a href="#about" class="nav-link text-base">About</a>
+    </div>
+    <!-- RIGHT SIDE: ENHANCED LOGIN DROPDOWN -->
+    <div class="relative dropdown" id="loginDropdown">
+      <button class="login-btn px-6 py-3 rounded-xl transition flex items-center gap-3 pulse">
+        <i class="fas fa-sign-in-alt"></i>
+        Access Platform 
+        <i class="fas fa-chevron-down text-xs transition-transform duration-300"></i>
+      </button>
+
+      <div class="dropdown-menu absolute right-0 mt-3 rounded-xl w-56 py-3 shadow-2xl z-50 glow">
+        <a href="/login" class="block px-5 py-3 hover:bg-white/10 text-silver transition flex items-center gap-3 border-b border-white/5">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <i class="fas fa-user text-silver"></i>
+          </div>
+          <div>
+            <div class="font-medium">General Login</div>
+            <div class="text-xs text-smoke">Standard access</div>
+          </div>
+        </a>
+        <a href="/login?role=student" class="block px-5 py-3 hover:bg-white/10 text-silver transition flex items-center gap-3 border-b border-white/5">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <i class="fas fa-user-graduate text-silver"></i>
+          </div>
+          <div>
+            <div class="font-medium">Student Portal</div>
+            <div class="text-xs text-smoke">Learning dashboard</div>
+          </div>
+        </a>
+        <a href="/login?role=teacher" class="block px-5 py-3 hover:bg-white/10 text-silver transition flex items-center gap-3 border-b border-white/5">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <i class="fas fa-chalkboard-teacher text-silver"></i>
+          </div>
+          <div>
+            <div class="font-medium">Teacher Portal</div>
+            <div class="text-xs text-smoke">Class management</div>
+          </div>
+        </a>
+        <a href="/login?role=admin" class="block px-5 py-3 hover:bg-white/10 text-silver transition flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <i class="fas fa-user-shield text-silver"></i>
+          </div>
+          <div>
+            <div class="font-medium">Admin Portal</div>
+            <div class="text-xs text-smoke">System management</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="pt-40 pb-32 px-6 max-w-6xl mx-auto">
+    <div class="flex flex-col items-center text-center">
+      <div class="max-w-4xl" data-aos="fade-up">
+        <h1 class="text-6xl md:text-7xl font-bold leading-tight mb-8">
+          Welcome to <span class="text-pearl">EduSync</span>
+        </h1>
+        <h2 class="text-4xl md:text-5xl font-bold text-silver mb-12">
+          Smart Learning Platform
+        </h2>
+
+        <p class="mt-8 text-silver text-xl max-w-2xl mx-auto leading-relaxed">
+          An intelligent Learning Management System that integrates attendance tracking, assignment management, 
+          grade analytics, AI-driven predictions, and seamless communication — all in one unified platform.
+        </p>
+
+        <div class="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
+          <a href="/login"
+             class="hero-btn px-10 py-5 text-lg font-semibold rounded-2xl transition flex items-center justify-center gap-3">
+            <i class="fas fa-rocket"></i>
+            Launch Platform
+          </a>
+          <a href="#features"
+             class="px-10 py-5 text-lg font-semibold rounded-2xl transition flex items-center justify-center gap-3 glass hover:bg-white/10">
+            <i class="fas fa-star"></i>
+            Explore Features
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES SECTION -->
+  <section id="features" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-20" data-aos="fade-up">
+        <h2 class="text-5xl font-bold mb-6">Platform <span class="text-pearl">Features</span></h2>
+        <p class="text-silver text-xl max-w-3xl mx-auto leading-relaxed">
+          EduSync brings together all the tools educators and students need in one seamless, intelligent platform
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up">
+          <div class="feature-icon">
+            <i class="fas fa-book-open text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">Course Management</h4>
+          <p class="text-silver leading-relaxed">
+            Teachers can create, assign, and manage courses with ease. Track student enrollment, upload materials, and organize classrooms efficiently.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up" data-aos-delay="100">
+          <div class="feature-icon">
+            <i class="fas fa-calendar-check text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">Attendance Tracking</h4>
+          <p class="text-silver leading-relaxed">
+            Smart attendance system with daily logs, percentage calculations, analytics, and automated insights for both students and teachers.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up" data-aos-delay="200">
+          <div class="feature-icon">
+            <i class="fas fa-brain text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">AI Risk Prediction</h4>
+          <p class="text-silver leading-relaxed">
+            Machine Learning algorithms automatically identify at-risk students using performance, attendance, and behavioral data patterns.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up">
+          <div class="feature-icon">
+            <i class="fas fa-tasks text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">Assignment Management</h4>
+          <p class="text-silver leading-relaxed">
+            Students submit assignments online; teachers review, grade, and provide feedback instantly with our streamlined workflow.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up" data-aos-delay="100">
+          <div class="feature-icon">
+            <i class="fas fa-bell text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">Real-Time Notifications</h4>
+          <p class="text-silver leading-relaxed">
+            Automated alerts for grades, attendance, risk predictions, and announcements keep everyone informed and engaged.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="glass-card p-8 rounded-2xl card-hover" data-aos="fade-up" data-aos-delay="200">
+          <div class="feature-icon">
+            <i class="fas fa-chart-bar text-pearl text-2xl"></i>
+          </div>
+          <h4 class="text-2xl font-semibold mb-4 text-pearl">Analytics Dashboard</h4>
+          <p class="text-silver leading-relaxed">
+            Visual dashboards display performance metrics, attendance trends, ML predictions, and comprehensive course statistics.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD PREVIEW SECTION -->
+  <section id="dashboard" class="py-24 px-6 bg-gradient-to-b from-gray-900 to-black">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-20" data-aos="fade-up">
+        <h2 class="text-5xl font-bold mb-6">Role-Based <span class="text-pearl">Dashboards</span></h2>
+        <p class="text-silver text-xl max-w-3xl mx-auto leading-relaxed">
+          Customized interfaces designed for each user role with relevant tools and information
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Student Dashboard -->
+        <div class="dashboard-card p-8 rounded-2xl card-hover" data-aos="fade-right">
+          <div class="flex items-center gap-5 mb-8">
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+              <i class="fas fa-user-graduate text-charcoal text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-pearl">Student Dashboard</h3>
+              <p class="text-silver text-sm">Personal learning environment</p>
+            </div>
+          </div>
+          <ul class="space-y-4 text-silver mb-8">
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Course overview and progress</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Assignment submission portal</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Grade tracking and analytics</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Attendance records</span>
+            </li>
+          </ul>
+          <a href="login?role=student" class="w-full text-center py-4 glass hover:bg-white/10 rounded-xl transition block text-pearl font-semibold">
+            Access Student Portal
+          </a>
+        </div>
+
+        <!-- Teacher Dashboard -->
+        <div class="dashboard-card p-8 rounded-2xl card-hover" data-aos="fade-up">
+          <div class="flex items-center gap-5 mb-8">
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+              <i class="fas fa-chalkboard-teacher text-charcoal text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-pearl">Teacher Dashboard</h3>
+              <p class="text-silver text-sm">Class management hub</p>
+            </div>
+          </div>
+          <ul class="space-y-4 text-silver mb-8">
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Course creation and management</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Attendance marking system</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Assignment grading tools</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Student performance analytics</span>
+            </li>
+          </ul>
+          <a href="login?role=teacher" class="w-full text-center py-4 glass hover:bg-white/10 rounded-xl transition block text-pearl font-semibold">
+            Access Teacher Portal
+          </a>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div class="dashboard-card p-8 rounded-2xl card-hover" data-aos="fade-left">
+          <div class="flex items-center gap-5 mb-8">
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+              <i class="fas fa-user-shield text-charcoal text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-2xl font-bold text-pearl">Admin Dashboard</h3>
+              <p class="text-silver text-sm">Institution management</p>
+            </div>
+          </div>
+          <ul class="space-y-4 text-silver mb-8">
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>User management and permissions</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>System analytics and reports</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Institution-wide settings</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <i class="fas fa-check text-silver"></i>
+              <span>Risk prediction overview</span>
+            </li>
+          </ul>
+          <a href="login?role=admin" class="w-full text-center py-4 glass hover:bg-white/10 rounded-xl transition block text-pearl font-semibold">
+            Access Admin Portal
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT SECTION -->
+  <section id="about" class="py-24 px-6 bg-gray-900/80">
+    <div class="max-w-4xl mx-auto text-center" data-aos="fade-up">
+      <h2 class="text-5xl font-bold mb-8">About <span class="text-pearl">EduSync</span></h2>
+      <div class="glass-card p-12 rounded-3xl">
+        <div class="flex flex-col items-center mb-8">
+          <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl">
+            <i class="fas fa-user text-charcoal text-3xl"></i>
+          </div>
+          <h3 class="text-3xl font-bold text-pearl mb-2">Darsh Vithlani</h3>
+          <p class="text-silver text-lg">CSE (AIML) Student & Developer</p>
+        </div>
+        <p class="text-silver text-xl mb-8 leading-relaxed">
+          EduSync is my passion project - a learning management system built from the ground up while 
+          pursuing my AIML degree. As a student myself, I understand the challenges of 
+          modern education and created this platform to address real needs in the classroom.
+        </p>
+        <p class="text-silver text-xl leading-relaxed">
+          This project represents my journey in software development, combining academic learning with 
+          practical application to create something truly useful for educators and students alike.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-16 px-6 bg-black border-t border-gray-700/30">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start gap-12">
+        <div class="text-right md:text-left">
+          <h3 class="font-bold text-xl mb-6 text-pearl">Platform Access</h3>
+          <ul class="space-y-4 text-lg text-silver">
+            <li><a href="/student_dashboard" class="hover:text-pearl transition flex items-center gap-3">
+              <i class="fas fa-arrow-right text-sm"></i>
+              Student Dashboard
+            </a></li>
+            <li><a href="/teacher_dashboard" class="hover:text-pearl transition flex items-center gap-3">
+              <i class="fas fa-arrow-right text-sm"></i>
+              Teacher Dashboard
+            </a></li>
+            <li><a href="/admin_dashboard" class="hover:text-pearl transition flex items-center gap-3">
+              <i class="fas fa-arrow-right text-sm"></i>
+              Admin Dashboard
+            </a></li>
+          </ul>
+        </div>
+
+        <div class="md:order-1">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="logo-container w-12 h-12 rounded-xl flex items-center justify-center">
+              <i class="fas fa-graduation-cap text-charcoal text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-pearl">EduSync</h1>
+              <p class="text-sm text-silver">Intelligent Learning Platform</p>
+            </div>
+          </div>
+          <p class="text-silver text-lg max-w-md leading-relaxed">
+            The future of education management powered by AI and modern technology, built with passion and precision.
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-700/30 mt-12 pt-8 text-center">
+        <p class="text-gray-500 text-lg">© 2025 EduSync. Crafted with passion by Darsh Vithlani.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    // Initialize AOS
+    AOS.init({
+      duration: 1000,
+      once: true,
+      offset: 100
+    });
+
+    // Enhanced dropdown functionality
+    const dropdown = document.getElementById("loginDropdown");
+    const dropdownButton = dropdown.querySelector("button");
+
+    dropdownButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("open");
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", () => {
+      dropdown.classList.remove("open");
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const nav = document.querySelector('nav');
+      if (window.scrollY > 50) {
+        nav.style.background = 'linear-gradient(135deg, rgba(26, 26, 26, 0.98), rgba(45, 55, 72, 0.95))';
+        nav.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.4)';
+      } else {
+        nav.style.background = 'linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(45, 55, 72, 0.9))';
+        nav.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+      }
+    });
+  </script>
+</body>
+</html>

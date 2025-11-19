@@ -3,17 +3,26 @@ body {
   background: #f4f4f4;
   margin: 40px;
 }
+/* Global forms for pages, but NOT navbar */
 form {
-  background: white;
-  padding: 20px;
+  background: black;
+  padding: 15px;
   border-radius: 8px;
-  width: 300px;
+  width: 175px;
 }
+
+/* Do NOT style navbar forms */
+nav form {
+  background: transparent !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
 button {
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 4px;
 }
 @keyframes fadeIn {
