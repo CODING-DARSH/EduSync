@@ -1,0 +1,25 @@
+<nav class="w-full glass-nav fixed top-4 left-4 right-4 z-40 px-4 py-3">
+<div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<button id="navToggle" class="hidden lg:block p-2 rounded-md hover:bg-white/5">☰</button>
+<div class="text-sm font-semibold text-gradient">EduSync</div>
+<div class="text-xs muted">Student Portal</div>
+</div>
+
+
+<div class="flex items-center gap-3">
+<input id="globalSearch" placeholder="Search courses, assignments..." class="search w-80" />
+
+
+<button class="icon-btn" title="Notifications">
+🔔
+{% if notifications %}
+<span class="notif-dot"></span>
+{% endif %}
+</button>
+
+
+<a href="/student/profile" class="icon-btn hidden sm:inline">👤</a>
+</div>
+</div>
+</nav>
