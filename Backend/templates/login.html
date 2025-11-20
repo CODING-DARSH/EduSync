@@ -1,143 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Management</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduSync Login</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     body {
-      background: linear-gradient(to bottom right, #0f0f0f, #2c2c2c);
-      color: #f1f1f1;
-      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0c0c0c, #121212, #1a1a1a);
+      font-family: Inter, system-ui, Segoe UI, Arial;
     }
-    .card {
-      background-color: #1b1b1b;
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
     }
-    .input-dark {
-      background-color: #2a2a2a;
-      border: 1px solid #3d3d3d;
-      color: #f5f5f5;
-    }
-    .input-dark::placeholder {
-      color: #a1a1a1;
-    }
-    .btn-dark {
-      background-color: #3d3d3d;
-    }
-    .btn-dark:hover {
-      background-color: #5a5a5a;
-    }
-    .active-tab {
-      background-color: #3d3d3d;
+
+    .tab-active {
+      border-bottom: 2.5px solid #e5e5e5;
       color: #ffffff;
+    }
+
+    .input-box {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .input-box::placeholder {
+      color: #c2c2c2;
+    }
+
+    .login-btn {
+      background: linear-gradient(90deg, #4b4b4b, #666666);
+    }
+
+    .login-btn:hover {
+      opacity: 0.9;
     }
   </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen">
 
+<body class="flex items-center justify-center min-h-screen px-4">
+
+<!-- Toast -->
+<div id="toast"
+     class="hidden fixed top-5 right-5 bg-red-600/80 text-white px-4 py-3 rounded-lg shadow-lg z-50 text-sm">
+  Invalid credentials. Please try again.
+</div>
+
+{% if request.args.get('error') %}
+<script>
+  window.onload = () => {
+    const toast = document.getElementById("toast");
+    toast.classList.remove("hidden");
+
+    setTimeout(() => {
+      toast.classList.add("hidden");
+    }, 3000);
+  };
+</script>
+{% endif %}
+
+<!-- CARD -->
+<div class="glass-card w-full max-w-md rounded-2xl p-8">
+
+  <!-- BRAND -->
   <div class="text-center mb-8">
-    <h1 class="text-4xl font-semibold mb-2">Student <span class="text-gray-400">Management</span></h1>
+    <h1 class="text-4xl font-bold text-white">Edu<span class="text-gray-300">Sync</span></h1>
+    <p class="text-gray-400 text-sm mt-1">Smart Learning Management System</p>
   </div>
 
-  <div class="card shadow-xl rounded-xl w-[380px] p-8">
-    <!-- Tabs -->
-    <div class="flex mb-6 bg-[#111] rounded-lg overflow-hidden">
-      <button id="student-tab" class="w-1/3 py-2 text-sm font-medium hover:bg-[#2a2a2a] active-tab">
-        Student
+  <!-- TABS -->
+  <div class="flex justify-around mb-8 border-b border-white/10 pb-2">
+    <button id="tab-student" class="pb-2 text-gray-400 hover:text-white tab-active">Student</button>
+    <button id="tab-teacher" class="pb-2 text-gray-400 hover:text-white">Teacher</button>
+    <button id="tab-admin" class="pb-2 text-gray-400 hover:text-white">Admin</button>
+  </div>
+
+  <!-- STUDENT FORM -->
+  <div id="form-student">
+    <form method="POST" action="/student/login" class="space-y-4">
+      <input type="number" name="id" placeholder="Student ID" required class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="password" name="password" placeholder="Password" required class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <button type="submit" class="w-full login-btn text-white py-3 rounded-lg font-semibold">
+        Login
       </button>
-      <button id="teacher-tab" class="w-1/3 py-2 text-sm font-medium hover:bg-[#2a2a2a]">
-        Teacher
-      </button>
-      <button id="admin-tab" class="w-1/3 py-2 text-sm font-medium hover:bg-[#2a2a2a]">
-        Admin
-      </button>
-    </div>
-
-    <!-- Student Login -->
-    <div id="student-form" class="space-y-4">
-      <!-- Default password login -->
-      <form id="student-password-form" method="POST" action="/student/login" class="space-y-4">
-        <input type="number" name="id" placeholder="Student ID" required
-               class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-        <input type="password" name="password" placeholder="Password" required
-               class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-        <button type="submit"
-                class="w-full py-2 rounded-md btn-dark text-white font-medium transition">Login</button>
-      </form>
-
-      <!-- <div class="flex justify-center text-sm text-gray-400">
-        <span>or</span>
-      </div> -->
-
-      <!-- OTP login -->
-      <form id="student-otp-form" method="POST" action="/student/request-otp" class="space-y-4">
-        <input type="number" name="id" placeholder="Student ID" required
-               class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-        <input type="email" name="email" placeholder="Email (optional)" 
-               class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-        <input type="tel" name="phone" placeholder="Phone (optional)" pattern="[0-9]{10}"
-               class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-        <button type="submit"
-                class="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition">Request OTP</button>
-      </form>
-
-      <p class="text-center text-sm mt-4 text-gray-400">Don’t have an account?
-        <a href="/student/register" class="text-gray-200 hover:underline">Register</a>
-      </p>
-    </div>
-
-    <!-- Teacher Login -->
-    <form id="teacher-form" method="POST" action="/teacher/login" class="hidden space-y-4">
-      <input type="number" name="id" placeholder="Teacher ID" required
-             class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-      <input type="password" name="password" placeholder="Password" required
-             class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-      <button type="submit"
-              class="w-full py-2 rounded-md btn-dark text-white font-medium transition">Login</button>
-              <p class="text-center text-sm mt-4 text-gray-400">
-  Don’t have an account? <a href="/teacher/register" class="text-gray-200 hover:underline">Register</a>
-</p>
     </form>
 
-    <!-- Admin Login -->
-    <form id="admin-form" method="POST" action="/admin/login" class="hidden space-y-4">
-      <input type="text" name="username" placeholder="Admin Username" required
-             class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-      <input type="password" name="password" placeholder="Password" required
-             class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-      <button type="submit"
-              class="w-full py-2 rounded-md btn-dark text-white font-medium transition">Login</button>
+    <div class="text-center text-gray-400 text-sm my-4">or</div>
+
+    <form method="POST" action="/student/request-otp" class="space-y-4">
+      <input type="number" name="id" placeholder="Student ID" required class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="email" name="email" placeholder="Email (optional)" class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="tel" name="phone" placeholder="Phone (optional)" pattern="[0-9]{10}" class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-semibold">
+        Request OTP
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-400 mt-4">
+      Don't have an account?
+      <a href="/student/register" class="text-gray-200 hover:underline">Register</a>
+    </p>
+  </div>
+
+  <!-- TEACHER FORM -->
+  <div id="form-teacher" class="hidden space-y-4">
+    <form method="POST" action="/teacher/login" class="space-y-4">
+      <input type="number" name="id" placeholder="Teacher ID" required class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="password" name="password" placeholder="Password" required class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <button type="submit" class="w-full login-btn text-white py-3 rounded-lg font-semibold">
+        Login
+      </button>
     </form>
   </div>
 
-  <script>
-    const studentTab = document.getElementById('student-tab');
-    const teacherTab = document.getElementById('teacher-tab');
-    const adminTab = document.getElementById('admin-tab');
-    const studentForm = document.getElementById('student-form');
-    const teacherForm = document.getElementById('teacher-form');
-    const adminForm = document.getElementById('admin-form');
+  <!-- ADMIN FORM -->
+  <div id="form-admin" class="hidden space-y-4">
+    <form method="POST" action="/admin/login" class="space-y-4">
+      <input type="text" name="username" placeholder="Admin Username" required class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="password" name="password" placeholder="Password" required class="w-full input-box px-4 py-3 rounded-lg" />
 
-    function showForm(tab) {
-      [studentTab, teacherTab, adminTab].forEach(t => t.classList.remove('active-tab'));
-      [studentForm, teacherForm, adminForm].forEach(f => f.classList.add('hidden'));
+      <button type="submit" class="w-full login-btn text-white py-3 rounded-lg font-semibold">
+        Login
+      </button>
+    </form>
+  </div>
 
-      if (tab === 'student') {
-        studentTab.classList.add('active-tab');
-        studentForm.classList.remove('hidden');
-      } else if (tab === 'teacher') {
-        teacherTab.classList.add('active-tab');
-        teacherForm.classList.remove('hidden');
-      } else {
-        adminTab.classList.add('active-tab');
-        adminForm.classList.remove('hidden');
-      }
-    }
+</div>
 
-    studentTab.addEventListener('click', () => showForm('student'));
-    teacherTab.addEventListener('click', () => showForm('teacher'));
-    adminTab.addEventListener('click', () => showForm('admin'));
-  </script>
+<!-- MAIN TAB SCRIPT -->
+<script>
+  const tabs = {
+    student: document.getElementById("tab-student"),
+    teacher: document.getElementById("tab-teacher"),
+    admin: document.getElementById("tab-admin"),
+  };
+
+  const forms = {
+    student: document.getElementById("form-student"),
+    teacher: document.getElementById("form-teacher"),
+    admin: document.getElementById("form-admin"),
+  };
+
+  function switchTab(tab) {
+    Object.values(tabs).forEach(btn => btn.classList.remove("tab-active"));
+    Object.values(forms).forEach(f => f.classList.add("hidden"));
+
+    tabs[tab].classList.add("tab-active");
+    forms[tab].classList.remove("hidden");
+  }
+
+  tabs.student.onclick = () => switchTab("student");
+  tabs.teacher.onclick = ()=>switchTab("teacher");
+  tabs.admin.onclick = () => switchTab("admin");
+</script>
+
+<!-- AUTO TAB SELECTOR SCRIPT -->
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const role = params.get("role");
+
+  if (role === "teacher") {
+    switchTab("teacher");
+  } else if (role === "admin") {
+    switchTab("admin");
+  } else {
+    switchTab("student");
+  }
+</script>
+
 </body>
 </html>

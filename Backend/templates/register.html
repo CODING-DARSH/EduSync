@@ -1,56 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Register</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Register – EduSync</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     body {
-      background: linear-gradient(to bottom right, #0f0f0f, #2c2c2c);
-      color: #f1f1f1;
-      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0d0d0d, #101010, #181818);
+      font-family: Inter, system-ui, Segoe UI, Arial;
     }
-    .card {
-      background-color: #1b1b1b;
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
     }
-    .input-dark {
-      background-color: #2a2a2a;
-      border: 1px solid #3d3d3d;
-      color: #f5f5f5;
+
+    .input-box {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
     }
-    .input-dark::placeholder {
-      color: #a1a1a1;
+
+    .input-box::placeholder {
+      color: #bfbfbf;
     }
+
     .btn-dark {
-      background-color: #3d3d3d;
+      background: linear-gradient(90deg, #4b4b4b, #666666);
+      color: white;
+      font-weight: 600;
     }
+
     .btn-dark:hover {
-      background-color: #5a5a5a;
+      opacity: 0.9;
     }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
 
-  <form method="POST" action="/student/register" class="card shadow-xl rounded-xl p-8 w-[400px] space-y-4">
-    <h2 class="text-2xl font-semibold text-center mb-4">📝 Student Registration</h2>
+<body class="flex items-center justify-center min-h-screen px-4">
 
-    <input type="text" name="name" placeholder="Full Name" required
-           class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-    <input type="email" name="email" placeholder="Email Address" required
-           class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-    <input type="tel" name="phone" placeholder="Phone Number" pattern="[0-9]{10}" required
-           class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
-    <input type="password" name="password" placeholder="Password" required
-           class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
+  <div class="glass-card w-full max-w-md rounded-2xl p-8">
 
-    <button type="submit"
-            class="w-full py-2 rounded-md btn-dark text-white font-medium transition">Register</button>
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-white">Student Registration</h1>
+      <p class="text-gray-400 text-sm mt-1">Create your EduSync student account</p>
+    </div>
 
-    <p class="text-center text-sm mt-4 text-gray-400">Already have an account?
-      <a href="/" class="text-gray-200 hover:underline">Login</a>
+    <form method="POST" action="/student/register" class="space-y-5">
+
+      <input type="text" name="name" placeholder="Full Name" required
+             class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <input type="email" name="email" placeholder="Email Address" required
+             class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <input type="tel" name="phone" placeholder="Phone Number" pattern="[0-9]{10}" required
+             class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <input type="password" name="password" placeholder="Password" required
+             class="w-full input-box px-4 py-3 rounded-lg" />
+
+      <button type="submit"
+              class="w-full btn-dark py-3 rounded-lg text-white">
+        Register
+      </button>
+
+    </form>
+
+    <p class="text-center text-sm text-gray-400 mt-6">
+      Already have an account?
+      <a href="/login" class="text-gray-200 hover:underline">Login</a>
     </p>
-  </form>
+
+  </div>
 
 </body>
+
 </html>
