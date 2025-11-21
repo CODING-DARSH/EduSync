@@ -1,86 +1,200 @@
-{% extends "base.html" %}
-{% block title %}Mark Attendance{% endblock %}
+<!doctype html>
+<html lang="en">
 
-{% block content %}
-<!-- Navigation Bar -->
-<nav class="flex justify-between items-center bg-[#0d0d0d] px-6 py-4 border-b border-[#2f2f2f] shadow-md">
-  <h1 class="text-xl font-semibold text-white tracking-wide">
-    📝 Mark Attendance — <span class="text-gray-400">Course {{ course_id }}</span>
-  </h1>
-  <a href="/teacher/dashboard"
-     class="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-     ⬅ Back to Dashboard
-  </a>
-</nav>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mark Attendance – Course {{ course_id }}</title>
 
-<!-- Main Section -->
-<main class="p-8 bg-[#101010] min-h-screen text-gray-200">
-  <form method="POST" action="{{ url_for('teacher_mark_attendance', course_id=course_id) }}"
-        class="max-w-4xl mx-auto bg-[#181818] border border-[#2a2a2a] rounded-2xl p-6 shadow-lg">
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Date + Save -->
-    <div class="flex flex-wrap items-center gap-4 mb-6">
-<label class="text-gray-300 font-medium">Date</label>
-<input type="date" name="date" value="{{ date }}"
-       onchange="window.location='?date=' + this.value"
-       class="bg-[#222] text-white px-3 py-2 rounded-md border border-[#333] focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all">
+  <style>
+    body {
+      background: linear-gradient(135deg, #000, #0b0b0b, #131313);
+      min-height: 100vh;
+      color: #d9d9d9;
+      font-family: Inter, system-ui, Arial;
+    }
 
-      <button type="submit"
-              class="ml-auto bg-gradient-to-r from-gray-700 to-gray-900 text-white px-6 py-2 rounded-md font-semibold hover:from-gray-600 hover:to-gray-800 transition-all">
-        💾 Save Attendance
-      </button>
+    /* Glass Card */
+    .glass {
+      background: rgba(20, 20, 20, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Input */
+    .att-input {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      transition: 0.25s ease;
+    }
+
+    .att-input:focus {
+      border-color: #3b82f6;
+      outline: none;
+    }
+
+    /* Main Action Button */
+    .primary-btn {
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      padding: 10px 18px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      transition: 0.25s ease;
+    }
+
+    .primary-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(59, 130, 246, 0.35);
+    }
+
+    /* Mark All Button */
+    .mark-all {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 14px;
+      border-radius: 8px;
+      color: #ccc;
+      transition: 0.25s ease;
+    }
+
+    .mark-all:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+
+    /* Success Toast */
+    #attToast {
+      opacity: 0;
+      transform: translateY(-15px);
+      transition: all 0.4s ease;
+    }
+
+    #attToast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body class="p-6">
+
+  <!-- SUCCESS TOAST -->
+  {% if request.args.get('saved') %}
+  <div id="attToast"
+    class="fixed top-6 right-6 bg-green-500/20 text-green-300 font-semibold px-4 py-3 rounded-lg 
+           border border-green-500/30 backdrop-blur-xl shadow-xl flex items-center gap-3">
+
+    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
+      viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+
+    Attendance Saved!
+  </div>
+
+  <script>
+    window.onload = () => {
+      const t = document.getElementById("attToast");
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2600);
+    };
+  </script>
+  {% endif %}
+
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-white tracking-wide">
+        📝 Mark Attendance – <span class="text-blue-400">Course {{ course_name }}</span>
+      </h1>
+
+      <a href="/teacher/dashboard" class="text-blue-400 hover:text-blue-300 transition">
+        ← Back to Dashboard
+      </a>
     </div>
 
-    <!-- Student List -->
-    <div class="overflow-x-auto rounded-xl border border-[#2a2a2a] bg-[#121212]">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-[#1b1b1b] text-gray-400 uppercase text-sm tracking-wider">
-          <tr>
-            <th class="p-3 border-b border-[#222]">Student Name</th>
-            <th class="p-3 border-b border-[#222] text-center">Present</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students %}
-          <tr class="hover:bg-[#1a1a1a] transition-all border-b border-[#222]">
-            <td class="p-3 text-white font-medium">{{ s[1] }}</td>
-            <td class="p-3 text-center">
-{% set present = s[2] %}
-{% set marked = s[3] %}
+    <!-- MAIN CARD -->
+    <div class="glass rounded-2xl p-6">
 
-{% if marked %}
-  <input type="checkbox" disabled
-         {% if present == 1 %}checked{% endif %}
-         class="w-5 h-5 accent-gray-500 opacity-50 cursor-not-allowed">
-  <span class="text-xs text-gray-400 ml-2">(Already Marked)</span>
-{% else %}
-  <input type="checkbox" name="present_{{ s[0] }}"
-         {% if present == 1 %}checked{% endif %}
-         class="w-5 h-5 accent-gray-500 cursor-pointer">
-{% endif %}
+      <form method="POST" action="{{ url_for('teacher_mark_attendance', course_id=course_id) }}">
 
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        <!-- Date + Save Button -->
+        <div class="flex flex-wrap items-center gap-4 mb-6">
+
+          <label class="text-gray-300 font-medium">Date</label>
+
+          <input type="date" name="date" value="{{ date }}" class="att-input"
+            onchange="window.location='?date=' + this.value">
+
+          <button type="submit" class="primary-btn ml-auto">
+            💾 Save Attendance
+          </button>
+        </div>
+
+        <!-- TABLE -->
+        <div class="overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#101010]">
+          <table class="w-full border-collapse">
+            <thead class="bg-[#161616] text-gray-400 uppercase text-sm tracking-wide">
+              <tr>
+                <th class="p-3 border-b border-[#222] text-left">Student Name</th>
+                <th class="p-3 border-b border-[#222] text-center">Present</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for s in students %}
+              <tr class="border-b border-[#222] hover:bg-[#1a1a1a] transition">
+                <td class="p-4 text-white font-medium">{{ s[1] }}</td>
+
+                <td class="p-4 text-center">
+                  {% set present = s[2] %}
+                  {% set marked = s[3] %}
+
+                  {% if marked %}
+                  <input type="checkbox" disabled
+                    {% if present == 1 %}checked{% endif %}
+                    class="w-5 h-5 opacity-50 cursor-not-allowed">
+                  <span class="text-xs text-gray-500 ml-2">(Marked)</span>
+
+                  {% else %}
+                  <input type="checkbox" name="present_{{ s[0] }}"
+                    {% if present == 1 %}checked{% endif %}
+                    class="w-5 h-5 cursor-pointer accent-gray-500">
+                  {% endif %}
+                </td>
+
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mark All Present -->
+        <div class="flex justify-end mt-5">
+          <button type="button" id="markAllBtn" class="mark-all">
+            ✅ Mark All Present
+          </button>
+        </div>
+
+      </form>
     </div>
+  </div>
 
-    <!-- Mark All Present -->
-    <div class="flex justify-end mt-5">
-      <button type="button" id="markAllBtn"
-              class="text-sm text-gray-300 hover:text-white transition-colors border border-[#333] px-4 py-2 rounded-md hover:bg-[#1c1c1c]">
-        ✅ Mark All Present
-      </button>
-    </div>
-  </form>
-</main>
+  <script>
+    document.getElementById("markAllBtn").addEventListener("click", () => {
+      document.querySelectorAll("input[type=checkbox]:not([disabled])")
+        .forEach(cb => cb.checked = true);
+    });
+  </script>
 
-<!-- Script -->
-<script>
-document.getElementById('markAllBtn').addEventListener('click', () => {
-  document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
-});
-</script>
+</body>
 
-{% endblock %}
+</html>
