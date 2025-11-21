@@ -5,300 +5,282 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Teacher Dashboard - EduSync</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    :root {
-      --black: #000000;
-      --dark-grey: #1a1a1a;
-      --grey: #2d2d2d;
-      --light-grey: #3d3d3d;
-      --silver: #c0c0c0;
-      --white: #ffffff;
-      --accent-blue: #3b82f6;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --accent-yellow: #f59e0b;
+    :root{
+      --black:#000;
+      --dark-grey:#111;
+      --grey:#2d2d2d;
+      --silver:#c0c0c0;
+      --accent-blue:#3b82f6;
+      --accent-green:#10b981;
+      --accent-red:#ef4444;
+      --accent-yellow:#f59e0b;
     }
-
-    body {
-      background: linear-gradient(135deg, var(--black) 0%, var(--dark-grey) 50%, var(--grey) 100%);
-      color: var(--silver);
-      font-family: 'Inter', sans-serif;
+    body{
+      background:linear-gradient(135deg,var(--black) 0%,var(--dark-grey) 50%,var(--grey) 100%);
+      color:var(--silver); font-family:Inter,system-ui,Arial;
     }
-
-    .glass {
-      background: rgba(26, 26, 26, 0.8);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .glass{ background:rgba(26,26,26,0.8); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.05) }
+    .glass-card{ background:rgba(45,45,45,0.6); border:1px solid rgba(255,255,255,0.04); }
+    .hover-lift{ transition:all .25s ease }
+    .hover-lift:hover{ transform:translateY(-6px); box-shadow:0 20px 40px rgba(0,0,0,0.6) }
+    .status-high{ color:var(--accent-red) } .status-medium{ color:var(--accent-yellow)} .status-low{ color:var(--accent-green) }
+    .small { font-size:.85rem; color:#9aa0a6 }
+    .muted { color:#9aa0a6 }
+    
+    /* New styles for enhanced UI */
+    .gradient-text {
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-
-    .glass-card {
-      background: rgba(45, 45, 45, 0.6);
-      backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    .card-hover {
+      transition: all 0.3s ease;
     }
-
-    .hover-lift {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .hover-lift:hover {
+    .card-hover:hover {
       transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-
-    .text-glow {
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    .sidebar-item {
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
     }
-
-    .bg-gradient-silver {
-      background: linear-gradient(135deg, var(--silver), var(--white));
+    .sidebar-item:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-left-color: #3b82f6;
     }
-
-    /* Enhanced Animations */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .sidebar-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-left-color: #3b82f6;
     }
-
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    .animate-fade-in-up {
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    .animate-slide-in-left {
-      animation: slideInLeft 0.6s ease-out;
-    }
-
-    .stagger-1 { animation-delay: 0.1s; }
-    .stagger-2 { animation-delay: 0.2s; }
-    .stagger-3 { animation-delay: 0.3s; }
-
-    /* Custom scrollbar */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 3px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: var(--silver);
-      border-radius: 3px;
-    }
-
-    /* Status indicators */
-    .status-high { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .status-medium { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
-    .status-low { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .status-neutral { background: rgba(192, 192, 192, 0.2); color: var(--silver); border: 1px solid rgba(192, 192, 192, 0.3); }
-
-    /* Progress bars */
     .progress-bar {
-      background: linear-gradient(90deg, var(--grey), var(--light-grey));
-      border-radius: 10px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.1);
       overflow: hidden;
     }
-
     .progress-fill {
-      background: linear-gradient(90deg, var(--silver), var(--white));
       height: 100%;
-      transition: width 0.8s ease-in-out;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .notification-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    }
+    .assignment-form {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease;
+    }
+    .assignment-form.expanded {
+      max-height: 500px;
     }
   </style>
 </head>
 <body class="min-h-screen antialiased">
 
-<!-- Navigation Bar -->
+<!-- NAV -->
 <nav class="fixed top-0 w-full glass z-50 border-b border-white/5">
   <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
-      <!-- Logo & Brand -->
-      <div class="flex items-center gap-3 animate-slide-in-left">
-        <div class="w-10 h-10 bg-gradient-silver rounded-xl flex items-center justify-center shadow-lg">
-          <i class="fa-solid fa-chalkboard-user text-gray-800 text-lg"></i>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+          <i class="fa-solid fa-chalkboard-user"></i>
         </div>
         <div>
-          <h1 class="text-xl font-bold text-white">EduSync</h1>
-          <p class="text-xs text-silver -mt-1">Teacher Portal</p>
+          <h1 class="text-lg font-bold gradient-text">EduSync</h1>
+          <p class="text-xs muted -mt-1">Teacher Portal</p>
         </div>
       </div>
 
-      <!-- Navigation Links -->
-      <div class="hidden md:flex items-center gap-8">
-        <a href="/teacher/dashboard" class="text-silver hover:text-white transition-colors font-medium border-b-2 border-silver pb-1">Dashboard</a>
-        <a href="/teacher/courses" class="text-silver hover:text-white transition-colors hover:border-silver pb-1">Courses</a>
-        <a href="/teacher/assignments" class="text-silver hover:text-white transition-colors hover:border-silver pb-1">Assignments</a>
-        <a href="/teacher/students" class="text-silver hover:text-white transition-colors hover:border-silver pb-1">Students</a>
-      </div>
-
-      <!-- User Menu -->
       <div class="flex items-center gap-4">
-        <!-- Search -->
-        <div class="relative hidden lg:block">
-          <input type="text" placeholder="Search students, courses..." 
-                 class="glass-card pl-10 pr-4 py-2 rounded-xl w-80 focus:outline-none focus:ring-2 focus:ring-silver/50 transition-all duration-300 text-silver placeholder-gray-500"/>
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-500"></i>
+        <div class="hidden lg:block relative">
+          <input id="searchBox" placeholder="Search students, courses..." class="glass-card px-4 py-2 rounded-lg text-silver placeholder:muted w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+          <i class="fa-solid fa-search absolute right-3 top-2.5 text-gray-400"></i>
         </div>
+        <button id="refreshMlBtn" class="glass-card px-4 py-2 rounded-lg hover-lift small flex items-center gap-2">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          Refresh ML
+        </button>
 
-        <!-- Notifications -->
         <div class="relative">
-          <button class="p-2 glass-card rounded-xl hover-lift group">
-            <i class="fa-solid fa-bell text-silver group-hover:text-white transition-colors"></i>
-            {% if notifications %}
-            <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            {% endif %}
+          <button class="glass-card p-2 rounded-xl hover-lift relative">
+            <i class="fa-solid fa-bell"></i>
+            {% if notifications %}<span class="notification-dot"></span>{% endif %}
           </button>
         </div>
 
-        <!-- Profile -->
-        <div class="flex items-center gap-3 glass-card px-3 py-2 rounded-xl hover-lift cursor-pointer">
-          <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" 
-               class="w-8 h-8 rounded-full border border-silver/20"/>
-          <div class="text-right">
-            <span class="text-sm font-medium text-white block">{{ teacher[1] if teacher else 'Teacher' }}</span>
-            <span class="text-xs text-silver">ID: {{ teacher[0] if teacher else 'N/A' }}</span>
+        <div class="relative group">
+          <div class="glass-card px-3 py-2 rounded-xl flex items-center gap-3 cursor-pointer">
+            <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" class="w-8 h-8 rounded-full" />
+            <div class="text-right">
+              <div class="font-semibold">{{ teacher[1] if teacher else 'Teacher' }}</div>
+              <div class="small">ID: {{ teacher[0] if teacher else 'N/A' }}</div>
+            </div>
+            <i class="fa-solid fa-chevron-down text-xs"></i>
+          </div>
+          
+          <!-- Dropdown menu -->
+          <div class="absolute right-0 top-full mt-2 w-48 glass rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+            <div class="py-2">
+              <a href="/teacher/profile" class="block px-4 py-2 text-sm hover:bg-white/5 flex items-center gap-2">
+                <i class="fa-solid fa-user w-4"></i>
+                Profile
+              </a>
+              <a href="/teacher/settings" class="block px-4 py-2 text-sm hover:bg-white/5 flex items-center gap-2">
+                <i class="fa-solid fa-gear w-4"></i>
+                Settings
+              </a>
+              <div class="border-t border-white/10 my-1"></div>
+<form action="/logout" method="POST" class="w-full">
+    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket w-4"></i>
+        Logout
+    </button>
+</form>
+            </div>
           </div>
         </div>
-
-        <!-- Logout Button -->
-        <form action="/logout" method="POST">
-          <button type="submit" class="p-2 glass-card rounded-xl hover-lift text-red-400 hover:text-red-300 transition-colors group" title="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
-        </form>
       </div>
     </div>
   </div>
 </nav>
 
-<!-- Main Content -->
-<main class="pt-20 pb-8 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto">
+<main class="pt-20 pb-12 px-4 max-w-8xl mx-auto">
+  <!-- Welcome Header -->
+  <section class="mb-8">
+    <h1 class="text-2xl font-bold text-white">Welcome back, {{ teacher[1] if teacher else 'Teacher' }}!</h1>
+  </section>
 
-  <!-- Welcome Section -->
-  <section class="mb-8 animate-fade-in-up">
-    <div class="glass p-8 rounded-2xl hover-lift">
-      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-        <div class="flex-1">
-          <h1 class="text-4xl font-bold text-white mb-2">Welcome back, {{ teacher[1] if teacher else 'Professor' }}! 👋</h1>
-          <p class="text-silver text-lg">Here's your teaching overview for today</p>
-          
-          <!-- Quick Stats -->
-          <div class="flex gap-6 mt-8">
-            <div class="text-center glass-card p-4 rounded-xl hover-lift">
-              <div class="text-3xl font-bold text-white">{{ courses|length if courses else 0 }}</div>
-              <div class="text-sm text-silver mt-1">Your Courses</div>
-            </div>
-            
-            <div class="text-center glass-card p-4 rounded-xl hover-lift">
-              <div class="text-3xl font-bold text-white">{{ students|length if students else 0 }}</div>
-              <div class="text-sm text-silver mt-1">Your Students</div>
-            </div>
-            
-            <div class="text-center glass-card p-4 rounded-xl hover-lift">
-              <div class="text-3xl font-bold text-yellow-400">{{ assignments|length if assignments else 0 }}</div>
-              <div class="text-sm text-silver mt-1">Your Assignments</div>
-            </div>
-
-            <div class="text-center glass-card p-4 rounded-xl hover-lift">
-              <div class="text-3xl font-bold text-green-400">{{ at_risk_list|length if at_risk_list else 0 }}</div>
-              <div class="text-sm text-silver mt-1">At-Risk Students</div>
-            </div>
-          </div>
+  <!-- Top Overview -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="glass p-5 rounded-xl card-hover border-l-4 border-blue-500">
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="text-xs muted">Courses</div>
+          <div class="text-2xl font-bold text-white">{{ courses|length if courses else 0 }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+          <i class="fa-solid fa-book-open"></i>
         </div>
       </div>
+      <div class="small mt-2">Active courses</div>
+    </div>
+    
+    <div class="glass p-5 rounded-xl card-hover border-l-4 border-green-500">
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="text-xs muted">Students</div>
+          <div class="text-2xl font-bold text-white">{{ students|length if students else 0 }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-green-500/20 text-green-400">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+      <div class="small mt-2">Students under you</div>
+    </div>
+    
+    <div class="glass p-5 rounded-xl card-hover border-l-4 border-yellow-500">
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="text-xs muted">Assignments</div>
+          <div class="text-2xl font-bold text-white">{{ assignments|length if assignments else 0 }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-yellow-500/20 text-yellow-400">
+          <i class="fa-solid fa-file-lines"></i>
+        </div>
+      </div>
+      <div class="small mt-2">Active assignments</div>
+    </div>
+    
+    <div class="glass p-5 rounded-xl card-hover border-l-4 border-red-500">
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="text-xs muted">At-Risk</div>
+          <div class="text-2xl font-bold text-white" id="atRiskCount">{{ at_risk_list|length if at_risk_list else 0 }}</div>
+        </div>
+        <div class="p-2 rounded-lg bg-red-500/20 text-red-400">
+          <i class="fa-solid fa-exclamation-triangle"></i>
+        </div>
+      </div>
+      <div class="small mt-2">Predicted at-risk students</div>
     </div>
   </section>
 
-  <!-- Main Dashboard Grid -->
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <!-- LEFT (analytics + courses) -->
+    <div class="xl:col-span-2 space-y-6">
+      <!-- Analytics partial -->
+      {% include 'partials/analytics.html' %}
 
-    <!-- Left Column - 2/3 width -->
-    <div class="xl:col-span-2 space-y-8">
-      <!-- Courses Section -->
-      <section class="glass p-6 rounded-2xl hover-lift animate-fade-in-up stagger-1">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-            <i class="fa-solid fa-book-open text-silver"></i>
-            My Teaching Courses
-          </h2>
-          <a href="/teacher/add_course" class="text-sm text-silver hover:text-white transition-colors flex items-center gap-1">
-            <i class="fa-solid fa-plus"></i> Add Course
+      <!-- Course cards / list -->
+      <section class="glass p-6 rounded-xl card-hover">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-semibold text-white text-lg">Courses Overview</h3>
+          <a href="/teacher/courses" class="small muted flex items-center gap-1 hover:text-white transition-colors">
+            Manage courses <i class="fa-solid fa-arrow-right text-xs"></i>
           </a>
         </div>
-
+        
         {% if courses %}
         <div class="grid md:grid-cols-2 gap-4">
           {% for course in courses %}
-          <div class="glass-card p-4 rounded-xl border border-white/5 hover-lift group">
-            <div class="flex items-start justify-between mb-3">
+          <div class="glass-card p-4 rounded-lg card-hover">
+            <div class="flex justify-between items-start mb-3">
               <div>
-                <h3 class="font-semibold text-white">{{ course[1] }}</h3>
-                <p class="text-sm text-silver">ID: {{ course[0] }}</p>
+                <h4 class="font-semibold text-white">{{ course[1] }}</h4>
+                <div class="small muted">ID: {{ course[0] }}</div>
               </div>
-              <span class="status-low px-2 py-1 rounded-full text-xs">Active</span>
-            </div>
-            
-            <div class="space-y-2 mb-3">
-              <div class="flex justify-between text-xs text-silver">
-                <span>Students</span>
-                <span>
-                  {% set student_count = [] %}
-                  {% for student in students %}
-                    {% if student[3] == course[0] %}
-                      {% set _ = student_count.append(1) %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ student_count|length }} enrolled
-                </span>
-              </div>
-              
-              <div class="flex justify-between text-xs text-silver">
-                <span>Assignments</span>
-                <span>
-                  {% set assignment_count = [] %}
-                  {% for assignment in assignments %}
-                    {% if assignment.teacher_id == teacher[0] %}
-                      {% set _ = assignment_count.append(1) %}
-                    {% endif %}
-                  {% endfor %}
-                  {{ assignment_count|length }} active
-                </span>
-              </div>
+              <div class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 font-medium">Active</div>
             </div>
 
-            <div class="flex gap-2">
-              <a href="/teacher/course/{{ course[0] }}" 
-                 class="flex-1 text-center py-2 glass rounded-lg hover:bg-white/5 transition-colors text-sm text-silver hover:text-white">
-                View Course
+            <div class="mt-3 small muted flex items-center gap-4">
+              <span class="flex items-center gap-1">
+                <i class="fa-solid fa-users"></i>
+                {% set student_count = [] %}
+                {% for student in students %}
+                  {% if student[3] == course[0] %}
+                    {% set _ = student_count.append(1) %}
+                  {% endif %}
+                {% endfor %}
+                {{ student_count|length }} Students
+              </span>
+              <span class="flex items-center gap-1">
+                <i class="fa-solid fa-file-lines"></i>
+                {{ assignments|length }} Assignments
+              </span>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+              <a href="/teacher/course/{{ course[0] }}" class="px-3 py-2 glass-card rounded text-sm flex-1 text-center hover:bg-white/10 transition-colors">
+                <i class="fa-solid fa-folder-open mr-1"></i> Open
               </a>
-              <a href="/teacher/attendance/{{ course[0] }}" 
-                 class="flex-1 text-center py-2 glass rounded-lg hover:bg-white/5 transition-colors text-sm text-silver hover:text-white">
-                Attendance
+              <a href="/teacher/attendance/{{ course[0] }}" class="px-3 py-2 glass-card rounded text-sm flex-1 text-center hover:bg-white/10 transition-colors">
+                <i class="fa-solid fa-clipboard-check mr-1"></i> Attendance
+              </a>
+              <a href="/teacher/course/{{ course[0] }}/marks" class="px-3 py-2 glass-card rounded text-sm flex-1 text-center hover:bg-white/10 transition-colors">
+                <i class="fa-solid fa-pen mr-1"></i> Marks
               </a>
             </div>
           </div>
@@ -307,69 +289,93 @@
         {% else %}
         <div class="text-center py-8">
           <i class="fa-solid fa-book-open text-4xl text-gray-600 mb-3"></i>
-          <p class="text-gray-500">No teaching assignments yet</p>
+          <p class="text-gray-500">No courses assigned yet</p>
         </div>
         {% endif %}
       </section>
-
+      
       <!-- Assignments Section -->
-      <section class="glass p-6 rounded-2xl hover-lift animate-fade-in-up stagger-2">
+      <section class="glass p-6 rounded-xl card-hover">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-            <i class="fa-solid fa-file-alt text-silver"></i>
+            <i class="fa-solid fa-file-alt text-blue-400"></i>
             My Assignments
           </h2>
-          <a href="/teacher/create_assignment" class="text-sm text-silver hover:text-white transition-colors flex items-center gap-1">
+          <button id="toggleAssignmentForm" class="text-sm btn-primary px-4 py-2 rounded-lg flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> Create New
-          </a>
+          </button>
         </div>
 
         <!-- Assignment Creation Form -->
-        <form method="POST" action="/teacher/create_assignment" class="mb-6 glass-card p-4 rounded-xl">
-          <div class="grid md:grid-cols-2 gap-4 mb-4">
-            <input name="title" type="text" placeholder="Assignment Title" required
-                   class="px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver placeholder-gray-500"/>
-            <input name="course_id" type="number" placeholder="Course ID" required
-                   class="px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver placeholder-gray-500"/>
-          </div>
-          <div class="grid md:grid-cols-2 gap-4 mb-4">
-            <input name="description" type="text" placeholder="Description"
-                   class="px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver placeholder-gray-500"/>
-            <input name="due_date" type="date" required
-                   class="px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver"/>
-          </div>
-          <button type="submit" class="w-full py-3 bg-gradient-silver text-gray-800 rounded-lg font-semibold hover:opacity-90 transition-opacity">
-            Create Assignment
-          </button>
-        </form>
+        <div id="assignmentForm" class="assignment-form mb-6">
+          <form method="POST" action="/teacher/create_assignment" class="glass-card p-4 rounded-xl">
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="small muted mb-1 block">Assignment Title</label>
+                <input name="title" type="text" placeholder="Enter assignment title" required
+                       class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-500"/>
+              </div>
+              <div>
+                <label class="small muted mb-1 block">Course ID</label>
+                <input name="course_id" type="number" placeholder="Enter course ID" required
+                       class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-500"/>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="small muted mb-1 block">Description</label>
+                <input name="description" type="text" placeholder="Assignment description"
+                       class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-500"/>
+              </div>
+              <div>
+                <label class="small muted mb-1 block">Due Date</label>
+                <input name="due_date" type="date" required
+                       class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white"/>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 py-3 btn-primary rounded-lg font-semibold">
+                Create Assignment
+              </button>
+              <button type="button" id="cancelAssignmentForm" class="px-4 py-3 glass-card rounded-lg font-semibold hover:bg-white/10 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
 
         {% if assignments %}
         <div class="space-y-4">
           {% for assignment in assignments %}
-          <div class="glass-card p-4 rounded-xl hover-lift group">
+          <div class="glass-card p-4 rounded-xl card-hover">
             <div class="flex items-center justify-between mb-3">
               <div>
                 <h3 class="font-semibold text-white">{{ assignment[1] }}</h3>
-                <p class="text-sm text-silver">Due: {{ assignment[2] }}</p>
+                <p class="text-sm text-silver flex items-center gap-1 mt-1">
+                  <i class="fa-solid fa-calendar-day"></i> Due: {{ assignment[2] }}
+                </p>
               </div>
-              <span class="text-xs px-2 py-1 rounded-full status-neutral">
-                Your Assignment
+              <span class="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                Active
               </span>
             </div>
-            
+
             <div class="flex items-center justify-between">
               <div class="flex-1 mr-4">
                 <div class="flex justify-between text-xs text-silver mb-1">
                   <span>Submissions</span>
                   <span>0/{{ students|length }}</span>
                 </div>
-                <div class="progress-bar w-full h-2">
+                <div class="progress-bar w-full">
                   <div class="progress-fill" style="width: 0%"></div>
                 </div>
               </div>
-              <a href="/teacher/submissions/{{ assignment[0] }}" 
-                 class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm">
-                Grade
+
+              <a href="/teacher/submissions/{{ assignment[0] }}"
+                 class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> Grade
               </a>
             </div>
           </div>
@@ -383,153 +389,175 @@
         {% endif %}
       </section>
     </div>
-    <section class="glass p-6 rounded-2xl mt-6">
-  <h2 class="text-xl font-bold mb-4 text-white">
-    🚨 At-Risk Students
-  </h2>
 
-  {% if at_risk_list %}
-    <div class="space-y-2">
-      {% for s in at_risk_list %}
-      <div class="p-3 bg-[#1a1a1a] rounded-lg flex justify-between">
-        <div>
-          <p class="text-white font-semibold">Student ID: {{ s.student_id }}</p>
-          <p class="text-gray-400 text-sm">Risk Score: {{ s.risk_score|round(2) }}</p>
-        </div>
-        <span class="
-          {% if s.risk_label=='high' %}text-red-400{% 
-             elif s.risk_label=='medium' %}text-yellow-400{% 
-             else %}text-green-400{% endif %}
-          font-bold text-sm
-        ">
-          {{ s.risk_label|upper }}
-        </span>
-      </div>
-      {% endfor %}
+    <!-- RIGHT (side panels) -->
+    <div class="space-y-6">
+      <!-- Risk panel -->
+      {% include 'partials/risk_panel.html' %}
+
+      <!-- Calendar -->
+      {% include 'partials/calendar_panel.html' %}
+
+      <!-- Activity feed -->
+      {% include 'partials/activity_feed.html' %}
     </div>
-  {% else %}
-    <p class="text-gray-400">No at-risk students.</p>
-  {% endif %}
-</section>
-      <!-- Announcements -->
-      <section class="glass p-6 rounded-2xl hover-lift animate-fade-in-up stagger-2">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-            <i class="fa-solid fa-bullhorn text-orange-400"></i>
-            Announcements
-          </h2>
-          <span class="text-sm text-gray-400">{{ posts|length if posts else 0 }}</span>
-        </div>
+  </div>
 
-        <form method="POST" action="/teacher/post" class="mb-4">
-          <textarea name="content" rows="3" placeholder="Write something for your class..." required
-                    class="w-full px-3 py-2 bg-black/30 rounded-xl border border-silver/20 focus:outline-none focus:ring-2 focus:ring-orange-500/50 resize-none text-silver"></textarea>
-          <button type="submit" class="w-full mt-2 py-2 bg-orange-500/20 text-orange-400 rounded-xl font-semibold hover:bg-orange-500/30 transition-colors">
-            Post Announcement
-          </button>
-        </form>
-
-        {% if posts %}
-        <div class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-          {% for post in posts %}
-          <div class="glass-card p-3 rounded-xl border-l-2 border-orange-400">
-            <p class="text-white text-sm mb-1">{{ post[0] }}</p>
-            <div class="flex justify-between items-center text-xs text-gray-400">
-              <span>{{ post[1] }}</span>
-            </div>
-          </div>
-          {% endfor %}
+  <!-- Bottom: heatmap + detailed notifications -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    <div class="lg:col-span-2">
+      {% include 'partials/heatmap.html' %}
+    </div>
+    <div>
+      <section class="glass p-6 rounded-xl card-hover">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-semibold text-white">Recent Notifications</h3>
+          <a href="/teacher/notifications" class="small muted flex items-center gap-1 hover:text-white transition-colors">
+            View all <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
         </div>
-        {% else %}
-        <div class="text-center py-4">
-          <p class="text-gray-500 text-sm">No announcements yet</p>
-        </div>
-        {% endif %}
-      </section>
-
-      <!-- Notifications -->
-      <section class="glass p-6 rounded-2xl hover-lift animate-fade-in-up stagger-3">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-            <i class="fa-solid fa-bell text-yellow-400"></i>
-            Notifications
-          </h2>
-          <span class="text-sm text-gray-400">{{ notifications|length if notifications else 0 }}</span>
-        </div>
-
         {% if notifications %}
-        <div class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-          {% for notification in notifications %}
-          <div class="glass-card p-3 rounded-xl border-l-2 border-yellow-400">
-            <p class="text-white text-sm">{{ notification[0] }}</p>
-            <p class="text-gray-400 text-xs mt-1">{{ notification[1] }}</p>
+          <div class="space-y-3 max-h-64 overflow-y-auto pr-2">
+            {% for n in notifications %}
+              <div class="glass-card p-3 rounded-lg card-hover">
+                <div class="flex items-start gap-3">
+                  <div class="p-2 rounded-lg bg-blue-500/20 text-blue-400 mt-1">
+                    <i class="fa-solid fa-bell text-xs"></i>
+                  </div>
+                  <div>
+                    <div class="text-sm text-white">{{ n[0] }}</div>
+                    <div class="small muted mt-1">{{ n[1] }}</div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
           </div>
-          {% endfor %}
-        </div>
         {% else %}
-        <div class="text-center py-4">
-          <p class="text-gray-500 text-sm">No new notifications</p>
-        </div>
+          <div class="text-center py-6">
+            <i class="fa-solid fa-bell-slash text-2xl text-gray-600 mb-2"></i>
+            <p class="text-gray-500">No new notifications</p>
+          </div>
         {% endif %}
-      </section>
-
-      <!-- Add Course Form -->
-      <section class="glass p-6 rounded-2xl hover-lift">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-white">
-          <i class="fa-solid fa-plus text-silver"></i>
-          Add New Course
-        </h2>
-        <form method="POST" action="/teacher/add_course" class="space-y-3">
-          <div>
-            <input name="course_id" type="number" placeholder="Course ID" required
-                   class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver placeholder-gray-500"/>
-          </div>
-          <div>
-            <input name="course_name" type="text" placeholder="Course Name" required
-                   class="w-full px-3 py-2 bg-black/30 rounded-lg border border-silver/20 focus:outline-none focus:ring-2 focus:ring-silver/50 text-silver placeholder-gray-500"/>
-          </div>
-          <button type="submit" class="w-full py-2 bg-gradient-silver text-gray-800 rounded-lg font-semibold hover:opacity-90 transition-opacity">
-            Add Course
-          </button>
-        </form>
       </section>
     </div>
   </div>
 </main>
 
-<!-- JavaScript -->
 <script>
-  // Initialize animations
-  document.addEventListener('DOMContentLoaded', function() {
-    // Simple fade-in animation
-    const fadeElements = document.querySelectorAll('.animate-fade-in-up');
-    fadeElements.forEach((el, index) => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(20px)';
-      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-      
-      setTimeout(() => {
-        el.style.opacity = '1';
-        el.style.transform = 'translateY(0)';
-      }, index * 100);
-    });
-
-    // Add hover effects
-    const cards = document.querySelectorAll('.hover-lift');
-    cards.forEach(card => {
-      card.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-4px)';
-      });
-      card.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-      });
-    });
+  // Assignment form toggle
+  document.getElementById('toggleAssignmentForm').addEventListener('click', function() {
+    const form = document.getElementById('assignmentForm');
+    form.classList.toggle('expanded');
+    this.textContent = form.classList.contains('expanded') ? 'Cancel' : 'Create New';
+  });
+  
+  document.getElementById('cancelAssignmentForm').addEventListener('click', function() {
+    document.getElementById('assignmentForm').classList.remove('expanded');
+    document.getElementById('toggleAssignmentForm').textContent = 'Create New';
   });
 
-  // Auto-refresh data every 30 seconds
-  setInterval(() => {
-    window.location.reload();
-  }, 30000);
+  // helper: fetch ML results and update risk panel
+  async function refreshMl() {
+    const btn = document.getElementById('refreshMlBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Refreshing...';
+    try {
+      const res = await fetch('/api/predict_all?notify=false', { method: 'GET' });
+      const data = await res.json();
+      const atRisk = data.filter(d => d.risk_label === 'high' || d.risk_label === 'medium');
+      document.getElementById('atRiskCount').innerText = atRisk.length;
+
+      // update risk list area
+      const list = document.getElementById('riskList');
+      if (list) {
+        list.innerHTML = atRisk.map(s => `
+          <div class="p-3 bg-[#111] rounded-lg flex justify-between items-center card-hover">
+            <div>
+              <div class="font-semibold text-white">${s.name}</div>
+              <div class="small muted">Avg: ${s.avg_marks.toFixed(1)} • Attendance: ${s.attendance_pct.toFixed(1)}%</div>
+            </div>
+            <div class="text-sm ${s.risk_label==='high'?'status-high':s.risk_label==='medium'?'status-medium':'status-low'} font-bold px-2 py-1 rounded-full bg-opacity-20 ${s.risk_label==='high'?'bg-red-500':s.risk_label==='medium'?'bg-yellow-500':'bg-green-500'}">
+              ${s.risk_label.toUpperCase()}
+            </div>
+          </div>`).join('');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh ML';
+    }
+  }
+
+  document.getElementById('refreshMlBtn').addEventListener('click', refreshMl);
+
+  // auto-refresh ML every 90 seconds (optional)
+  setInterval(refreshMl, 90000);
+</script>
+
+<script>
+let latestRisk = [];
+
+document.getElementById("scanRisk").onclick = async () => {
+  const box = document.getElementById("riskResults");
+  box.innerHTML = '<div class="flex justify-center py-4"><i class="fa-solid fa-spinner fa-spin text-blue-400"></i></div>';
+
+  const res = await fetch("/api/risk/scan");
+  latestRisk = await res.json();
+
+  let html = `
+    <div class="overflow-x-auto mt-2">
+      <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
+        <thead class="bg-gray-800">
+          <tr class="text-gray-300 text-left">
+            <th class="p-3"></th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Risk</th>
+            <th class="p-3">Score</th>
+            <th class="p-3">Notified?</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  for (let s of latestRisk) {
+    const riskColor = s.risk_label === 'high' ? 'text-red-400' : 
+                      s.risk_label === 'medium' ? 'text-yellow-400' : 'text-green-400';
+                      
+    html += `
+      <tr class="border-t border-gray-700 hover:bg-gray-800/50">
+        <td class="p-3"><input type="checkbox" value="${s.id}" class="rounded"></td>
+        <td class="p-3 text-white">${s.name}</td>
+        <td class="p-3 ${riskColor} font-medium">${s.risk_label}</td>
+        <td class="p-3">${s.risk_score.toFixed(2)}</td>
+        <td class="p-3">${s.notified ? '<span class="text-green-400">YES</span>' : '<span class="text-red-400">NO</span>'}</td>
+      </tr>
+    `;
+  }
+
+  html += "</tbody></table></div>";
+  box.innerHTML = html;
+};
+
+document.getElementById("sendSelected").onclick = async () => {
+  const ids = [...document.querySelectorAll("#riskResults input:checked")]
+              .map(ch => Number(ch.value));
+
+  if (ids.length === 0) return alert("No students selected!");
+
+  const res = await fetch("/api/risk/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ students: ids })
+  });
+
+  const j = await res.json();
+  alert("Notifications sent: " + j.sent);
+};
+
+document.getElementById("resetFlags").onclick = async () => {
+  const res = await fetch("/teacher/risk/reset_flags", {method: "POST"});
+  const j = await res.json();
+  alert(j.message);
+};
 </script>
 
 </body>

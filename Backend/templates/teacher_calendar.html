@@ -1,0 +1,374 @@
+<!-- templates/teacher_calendar.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teacher Calendar - EduSync</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.6/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.6/index.global.min.js"></script>
+
+  <style>
+    :root {
+      --bg-1: #0f0f10;
+      --bg-2: #1a1a1a;
+      --card: rgba(30,30,30,0.7);
+      --muted: #9aa3ad;
+      --accent: #10b981;
+      --glass-border: rgba(255,255,255,0.04);
+    }
+    body { background: linear-gradient(135deg, var(--bg-1), var(--bg-2)); color: #c9ced2; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+
+    .glass { background: rgba(20,20,20,0.6); border: 1px solid var(--glass-border); backdrop-filter: blur(10px); }
+    .card { background: rgba(25,25,25,0.55); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); padding: 14px; }
+
+    /* FullCalendar container customization */
+    #calendar {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 560px;
+    }
+
+    /* small modal */
+    .modal-backdrop { background: rgba(0,0,0,0.6); position: fixed; inset: 0; display:flex; justify-content:center; align-items:center; z-index:60; }
+    .modal { width: 100%; max-width:720px; border-radius:12px; padding:18px; background:linear-gradient(180deg,#131313,#0f0f0f); box-shadow: 0 10px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); color:#e6eef3; }
+    .small-muted { color: var(--muted); font-size: 0.9rem; }
+    .pill { padding:6px 10px; border-radius:999px; font-weight:600; font-size:0.85rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.02); }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+<nav class="glass p-4 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-gradient-to-br from-slate-400 to-white rounded-lg flex items-center justify-center text-black font-bold">ES</div>
+    <div>
+      <div class="text-lg font-semibold">{{ teacher[1] if teacher else 'Teacher' }}</div>
+      <div class="small-muted">Teacher Calendar</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="/teacher/dashboard" class="pill">Back to Dashboard</a>
+    <button id="newEventBtn" class="pill">+ New Event</button>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+  <!-- left: calendar -->
+  <section class="lg:col-span-3 card glass">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xl font-semibold">Attendance & Schedule</h2>
+      <div class="flex items-center gap-2">
+        <button id="monthView" class="pill">Month</button>
+        <button id="weekView" class="pill">Week</button>
+      </div>
+    </div>
+    <div id="calendar"></div>
+  </section>
+
+  <!-- right: sidebar -->
+  <aside class="card glass">
+    <h3 class="font-semibold mb-2">Quick Add</h3>
+
+    <div class="mb-3">
+      <label class="small-muted">Title</label>
+      <input id="quick_title" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/4 rounded" placeholder="Test / Lecture / Deadline" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <input id="quick_date" type="date" class="px-3 py-2 bg-transparent border border-white/4 rounded" />
+      <select id="quick_color" class="px-3 py-2 bg-transparent border border-white/4 rounded">
+        <option value="#10b981">Lecture (Green)</option>
+        <option value="#3b82f6">Assignment (Blue)</option>
+        <option value="#f59e0b">Exam (Yellow)</option>
+        <option value="#ef4444">Alert (Red)</option>
+      </select>
+    </div>
+
+    <button id="quickAddBtn" class="w-full py-2 bg-gradient-to-r from-slate-300 to-white text-black rounded font-semibold">Add</button>
+
+    <hr class="my-4 border-white/5" />
+
+    <h4 class="font-semibold">Legend</h4>
+    <div class="mt-2 space-y-2 small-muted">
+      <div class="flex items-center gap-2"><div style="width:14px;height:14px;background:#10b981;border-radius:4px"></div> Lecture</div>
+      <div class="flex items-center gap-2"><div style="width:14px;height:14px;background:#3b82f6;border-radius:4px"></div> Assignment</div>
+      <div class="flex items-center gap-2"><div style="width:14px;height:14px;background:#f59e0b;border-radius:4px"></div> Exam</div>
+      <div class="flex items-center gap-2"><div style="width:14px;height:14px;background:#ef4444;border-radius:4px"></div> Alert</div>
+    </div>
+
+    <hr class="my-4 border-white/5" />
+    <div class="small-muted">Auto saves and syncs with your calendar. Drag items to reschedule.</div>
+  </aside>
+</main>
+
+<!-- Modal (hidden) -->
+<div id="modalRoot" style="display:none;"></div>
+
+<script>
+  // helper to open modal
+  function openModal(html) {
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `<div class="modal-backdrop" id="modal_bk">${html}</div>`;
+    root.style.display = 'block';
+    document.getElementById('modal_bk').addEventListener('click', (e) => {
+      if (e.target.id === 'modal_bk') closeModal();
+    });
+    document.addEventListener('keydown', escClose);
+  }
+  function escClose(e){ if(e.key==='Escape') closeModal(); }
+  function closeModal(){ document.getElementById('modalRoot').innerHTML=''; document.getElementById('modalRoot').style.display='none'; document.removeEventListener('keydown', escClose); }
+
+  // FullCalendar init
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      height: 650,
+      themeSystem: 'standard',
+      headerToolbar: false,
+      selectable: true,
+      editable: true, // drag & drop
+      dayMaxEvents: true,
+      eventDisplay: 'block',
+      eventColor: '#10b981',
+      timeZone: 'local',
+      eventMouseEnter: function(info) {
+        // tooltip simple
+        info.el.style.cursor = "pointer";
+      },
+      // load events (calls our API)
+      events: function(fetchInfo, successCallback, failureCallback) {
+        const start = fetchInfo.startStr;
+        const end = fetchInfo.endStr;
+        fetch(`/api/calendar/events?start=${start}&end=${end}`)
+          .then(r => {
+            if (!r.ok) throw new Error('fetch failed');
+            return r.json();
+          })
+          .then(data => successCallback(data))
+          .catch(err => { console.error(err); failureCallback(err); });
+      },
+
+      // select to create event
+      select: function(selectionInfo) {
+        // open create modal
+        const start = selectionInfo.startStr;
+        const end = selectionInfo.endStr;
+        openCreateModal({ start, end, allDay: selectionInfo.allDay });
+      },
+
+      // click event to edit
+      eventClick: function(info) {
+        openEditModal(info.event);
+      },
+
+      // event drop (reschedule) or resize
+      eventDrop: function(info) { handleEventMove(info.event); },
+      eventResize: function(info) { handleEventMove(info.event); }
+    });
+
+    calendar.render();
+
+    // view toggle
+    document.getElementById('monthView').onclick = () => calendar.changeView('dayGridMonth');
+    document.getElementById('weekView').onclick = () => calendar.changeView('timeGridWeek');
+
+    // Quick add UI
+    document.getElementById('quickAddBtn').addEventListener('click', async () => {
+      const title = document.getElementById('quick_title').value.trim();
+      const date = document.getElementById('quick_date').value;
+      const color = document.getElementById('quick_color').value;
+      if (!title || !date) { alert('provide title & date'); return; }
+
+      const payload = {
+        title,
+        description: '',
+        start: date+'T09:00:00',
+        end: date+'T10:00:00',
+        allDay: false,
+        color
+      };
+      try {
+        const res = await fetch('/api/calendar/event', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const j = await res.json();
+        if (j.id) {
+          calendar.refetchEvents();
+          document.getElementById('quick_title').value = '';
+          document.getElementById('quick_date').value = '';
+        } else {
+          alert('Failed to add');
+        }
+      } catch (err) { alert('Failed to add'); console.error(err); }
+    });
+
+    // New Event button - open blank modal
+    document.getElementById('newEventBtn').addEventListener('click', () => {
+      const today = new Date().toISOString().slice(0,10);
+      openCreateModal({ start: today+'T09:00:00', end: today+'T10:00:00', allDay:false });
+    });
+
+    // handle move/resize -> save to backend
+    async function handleEventMove(event) {
+      try {
+        const payload = {
+          start: event.start.toISOString(),
+          end: event.end ? event.end.toISOString() : event.start.toISOString(),
+          allDay: event.allDay
+        };
+        await fetch(`/api/calendar/event/${event.id}`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        // success: optionally show toast
+      } catch (err) {
+        alert('Failed to update event.');
+        console.error(err);
+      }
+    }
+
+    // open create modal
+    function openCreateModal({ start, end, allDay }) {
+      const html = `
+        <div class="modal">
+          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold">Create Event</h3><button onclick="closeModal()" class="pill">Close</button></div>
+
+          <div class="space-y-3">
+            <div><label class="small-muted">Title</label><input id="m_title" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" /></div>
+            <div><label class="small-muted">Description</label><textarea id="m_desc" rows="3" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded"></textarea></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="small-muted">Start</label><input id="m_start" type="datetime-local" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" value="${toLocalDateTime(start)}"/></div>
+              <div><label class="small-muted">End</label><input id="m_end" type="datetime-local" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" value="${toLocalDateTime(end)}"/></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="m_allDay" type="checkbox" ${allDay ? 'checked' : ''} />
+              <label class="small-muted">All day</label>
+              <select id="m_color" class="ml-auto px-2 py-1 bg-transparent border border-white/5 rounded">
+                <option value="#10b981">Lecture</option>
+                <option value="#3b82f6">Assignment</option>
+                <option value="#f59e0b">Exam</option>
+                <option value="#ef4444">Alert</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <button id="m_save" class="w-full py-2 bg-gradient-to-r from-slate-300 to-white text-black rounded">Save</button>
+              <button onclick="closeModal()" class="w-full py-2 border rounded">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `;
+      openModal(html);
+
+      // save handler
+      document.getElementById('m_save').addEventListener('click', async () => {
+        const title = document.getElementById('m_title').value.trim();
+        if(!title){ alert('Title required'); return; }
+        const payload = {
+          title,
+          description: document.getElementById('m_desc').value,
+          start: document.getElementById('m_start').value,
+          end: document.getElementById('m_end').value,
+          allDay: document.getElementById('m_allDay').checked,
+          color: document.getElementById('m_color').value
+        };
+        try {
+          const res = await fetch('/api/calendar/event', {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+          });
+          const j = await res.json();
+          if (j.id) {
+            closeModal();
+            calendar.refetchEvents();
+          } else {
+            alert('Create failed');
+          }
+        } catch (err) {
+          alert('Create failed');
+          console.error(err);
+        }
+      });
+    }
+
+    // open edit modal
+    function openEditModal(ev) {
+      const start = ev.start ? ev.start.toISOString().slice(0,16) : '';
+      const end = ev.end ? ev.end.toISOString().slice(0,16) : start;
+      const html = `
+        <div class="modal">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Edit Event</h3>
+            <button onclick="closeModal()" class="pill">Close</button>
+          </div>
+          <div class="space-y-3">
+            <div><label class="small-muted">Title</label><input id="m2_title" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" value="${escapeHtml(ev.title)}" /></div>
+            <div><label class="small-muted">Description</label><textarea id="m2_desc" rows="3" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded">${escapeHtml(ev.extendedProps.description||'')}</textarea></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="small-muted">Start</label><input id="m2_start" type="datetime-local" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" value="${toLocalDateTime(ev.start ? ev.start.toISOString() : '')}" /></div>
+              <div><label class="small-muted">End</label><input id="m2_end" type="datetime-local" class="w-full mt-1 px-3 py-2 bg-transparent border border-white/5 rounded" value="${toLocalDateTime(ev.end ? ev.end.toISOString() : '')}" /></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="m2_allDay" type="checkbox" ${ev.allDay ? 'checked':''} />
+              <label class="small-muted">All day</label>
+              <select id="m2_color" class="ml-auto px-2 py-1 bg-transparent border border-white/5 rounded">
+                <option value="#10b981" ${ev.backgroundColor=='#10b981'?'selected':''}>Lecture</option>
+                <option value="#3b82f6" ${ev.backgroundColor=='#3b82f6'?'selected':''}>Assignment</option>
+                <option value="#f59e0b" ${ev.backgroundColor=='#f59e0b'?'selected':''}>Exam</option>
+                <option value="#ef4444" ${ev.backgroundColor=='#ef4444'?'selected':''}>Alert</option>
+              </select>
+            </div>
+
+            <div class="flex gap-2">
+              <button id="m2_save" class="w-full py-2 bg-gradient-to-r from-slate-300 to-white text-black rounded">Save</button>
+              <button id="m2_delete" class="w-full py-2 bg-red-600 text-white rounded">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+      openModal(html);
+
+      document.getElementById('m2_save').addEventListener('click', async () => {
+        const payload = {
+          title: document.getElementById('m2_title').value.trim(),
+          description: document.getElementById('m2_desc').value,
+          start: document.getElementById('m2_start').value,
+          end: document.getElementById('m2_end').value,
+          allDay: document.getElementById('m2_allDay').checked,
+          color: document.getElementById('m2_color').value
+        };
+        try {
+          await fetch(`/api/calendar/event/${ev.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          closeModal();
+          calendar.refetchEvents();
+        } catch (err) { alert('Update failed'); console.error(err); }
+      });
+
+      document.getElementById('m2_delete').addEventListener('click', async () => {
+        if (!confirm('Delete this event?')) return;
+        try {
+          await fetch(`/api/calendar/event/${ev.id}`, { method:'DELETE' });
+          closeModal();
+          calendar.refetchEvents();
+        } catch (err) { alert('Delete failed'); console.error(err); }
+      });
+    }
+
+    // small helpers
+    function toLocalDateTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const off = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - off*60*1000);
+      return local.toISOString().slice(0,16);
+    }
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  }); // DOMContentLoaded
+</script>
+</body>
+</html>

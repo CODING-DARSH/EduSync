@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Enter Marks - {{ course_name }}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #000, #0c0c0c, #1a1a1a);
+      color: #d6d9db;
+      font-family: Inter, system-ui, Arial;
+    }
+
+    .glass {
+      background: rgba(25,25,25,0.6);
+      border: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+    }
+
+    input[type=number] {
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px;
+      width: 120px;
+      border-radius: 8px;
+      color: white;
+      transition: border 0.2s ease;
+    }
+
+    input[type=number]:focus {
+      border-color: #3b82f6;
+    }
+
+    .gradient-btn {
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      color: white;
+      font-weight: 600;
+      padding: 12px 22px;
+      border-radius: 10px;
+      transition: 0.25s ease;
+    }
+
+    .gradient-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+    }
+
+    /* TOAST ANIMATION */
+    #successToast {
+      opacity: 0;
+      transform: translateY(-15px);
+      transition: all 0.5s ease;
+    }
+    #successToast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body class="p-8">
+
+<!-- SUCCESS FLOATING TOAST -->
+<div id="successToast"
+  class="fixed top-6 right-6 bg-green-500/20 
+         text-green-300 font-semibold px-4 py-3 rounded-lg shadow-lg 
+         border border-green-500/30 backdrop-blur-lg 
+         flex items-center gap-3 opacity-0 pointer-events-none">
+
+  <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
+       viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round"
+          d="M5 13l4 4L19 7"/>
+  </svg>
+
+  Marks updated successfully!
+</div>
+
+<div class="max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-white">
+      Enter Marks – <span class="text-blue-400">{{ course_name }}</span>
+    </h1>
+
+<a href="/teacher/dashboard" class="text-blue-400 hover:text-blue-300 transition">
+  ← Back
+</a>
+  </div>
+
+  <!-- Card -->
+  <div class="glass p-6 rounded-xl shadow-lg">
+
+    <!-- Show toast only AFTER POST -->
+<div class="glass p-6 rounded-xl shadow-lg">
+
+    {% if request.args.get('saved') %}
+    <script>
+    window.onload = () => {
+      const toast = document.getElementById("successToast");
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    };
+    </script>
+    {% endif %}
+
+    <form id="marksForm" method="POST" action="/teacher/course/{{ course_id }}/marks/update">
+
+
+    <form id="marksForm" method="POST" action="/teacher/course/{{ course_id }}/marks/update">
+
+      <table class="w-full border border-white/10 rounded-xl overflow-hidden">
+        <thead class="bg-white/5 text-gray-300">
+          <tr>
+            <th class="text-left p-3">Student</th>
+            <th class="text-left p-3">Marks (0–100)</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for sid, sname, marks in rows %}
+          <tr class="border-t border-white/10">
+            <td class="p-3 text-white font-medium">{{ sname }}</td>
+            <td class="p-3">
+              <input 
+                type="number"
+                name="marks_{{ sid }}"
+                value="{{ marks if marks is not none else '' }}"
+                min="0" max="100" step="0.1"
+              />
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="mt-6 flex justify-end">
+        <button type="submit" id="saveBtn" class="gradient-btn">
+          Save Marks
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- BUTTON LOADING ANIMATION -->
+<script>
+document.getElementById("marksForm").addEventListener("submit", () => {
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg class="animate-spin h-5 w-5 inline-block" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10"
+        stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 010 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z">
+      </path>
+    </svg> Saving...`;
+});
+</script>
+
+</body>
+</html>
