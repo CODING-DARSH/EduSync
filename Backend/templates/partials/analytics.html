@@ -1,0 +1,53 @@
+<!-- templates/partials/analytics.html -->
+<section class="glass p-6 rounded-xl hover-lift">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-semibold">Class Analytics</h3>
+    <div class="small muted">Last 90 days</div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="glass-card p-3 rounded">
+      <div class="small muted">Average attendance</div>
+      <div class="text-2xl font-bold" id="avgAttendance">--%</div>
+      <canvas id="attendanceChart" height="80"></canvas>
+    </div>
+
+    <div class="glass-card p-3 rounded">
+      <div class="small muted">Avg marks</div>
+      <div class="text-2xl font-bold" id="avgMarks">--</div>
+      <canvas id="marksChart" height="80"></canvas>
+    </div>
+
+    <div class="glass-card p-3 rounded">
+      <div class="small muted">At-risk trend</div>
+      <div class="text-2xl font-bold" id="atRiskTrend">--</div>
+      <canvas id="riskTrendChart" height="80"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // fetch analytics data and draw charts (calls /api/analytics)
+    async function loadAnalytics(){
+      try{
+        const res = await fetch('/api/analytics');
+        const payload = await res.json();
+        document.getElementById('avgAttendance').innerText = (payload.avg_attendance||0).toFixed(1)+'%';
+        document.getElementById('avgMarks').innerText = (payload.avg_marks||0).toFixed(1);
+        document.getElementById('atRiskTrend').innerText = (payload.at_risk_count||0);
+
+        // attendanceChart
+        const ctxA = document.getElementById('attendanceChart').getContext('2d');
+        new Chart(ctxA, { type:'line', data:{ labels: payload.labels || [], datasets:[{ label:'Attendance', data: payload.attendance_series || [], fill:true, tension:0.3 }]}, options:{responsive:true,plugins:{legend:{display:false}}}});
+
+        // marksChart
+        const ctxM = document.getElementById('marksChart').getContext('2d');
+        new Chart(ctxM, { type:'bar', data:{ labels: payload.labels || [], datasets:[{ label:'Avg marks', data: payload.marks_series || [], barThickness:12 }]}, options:{responsive:true,plugins:{legend:{display:false}}}});
+
+        // riskTrendChart
+        const ctxR = document.getElementById('riskTrendChart').getContext('2d');
+        new Chart(ctxR, { type:'line', data:{ labels: payload.labels || [], datasets:[{ label:'At-risk', data: payload.at_risk_series || [], borderDash:[5,5], tension:0.3 }]}, options:{responsive:true,plugins:{legend:{display:false}}}});
+      }catch(e){ console.error('analytics err', e); }
+    }
+    loadAnalytics();
+  </script>
+</section>

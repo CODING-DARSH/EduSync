@@ -1,0 +1,60 @@
+<!-- templates/partials/assignments_dropdown.html -->
+<div class="card p-4 rounded-md">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h4 class="font-semibold">Assignments</h4>
+      <div class="small muted">Latest first • click to expand</div>
+    </div>
+    <a href="/teacher/create_assignment" class="small muted">Create</a>
+  </div>
+
+  <div id="assignList" class="space-y-2">
+    {% if assignments %}
+      {# show latest assignment only, rest hidden; assignments expected as list sorted by created_at or id desc #}
+      {% set latest = assignments[0] %}
+      <div class="p-3 rounded-md card flex justify-between items-center">
+        <div>
+          <div class="font-semibold">{{ latest[1] }}</div>
+          <div class="small muted">Due: {{ latest[2] }}</div>
+        </div>
+        <a href="/teacher/submissions/{{ latest[0] }}" class="px-3 py-1 rounded-md card small">Grade</a>
+      </div>
+
+      <div id="moreAssignments" style="display:none;">
+        {% for assignment in assignments[1:] %}
+          <div class="p-3 rounded-md card flex justify-between items-center">
+            <div>
+              <div class="font-medium">{{ assignment[1] }}</div>
+              <div class="small muted">Due: {{ assignment[2] }}</div>
+            </div>
+            <a href="/teacher/submissions/{{ assignment[0] }}" class="px-3 py-1 rounded-md card small">Grade</a>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if assignments|length > 1 %}
+        <button id="toggleAssign" class="w-full mt-2 px-3 py-2 rounded-md bg-[rgba(255,255,255,0.02)]">Show all ({{ assignments|length - 1 }} more)</button>
+      {% endif %}
+
+    {% else %}
+      <div class="small muted">No assignments yet</div>
+    {% endif %}
+  </div>
+
+  <script>
+    document.addEventListener('click', function(e){
+      const t = document.getElementById('toggleAssign');
+      if(!t) return;
+      t.addEventListener('click', () => {
+        const more = document.getElementById('moreAssignments');
+        if(more.style.display === 'none') {
+          more.style.display = 'block';
+          t.innerText = 'Show less';
+        } else {
+          more.style.display = 'none';
+          t.innerText = 'Show all ({{ assignments|length - 1 }} more)';
+        }
+      });
+    });
+  </script>
+</div>
