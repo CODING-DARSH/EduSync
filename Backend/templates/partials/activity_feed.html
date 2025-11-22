@@ -1,0 +1,28 @@
+<!-- templates/partials/activity_feed.html -->
+<section class="glass p-4 rounded-xl hover-lift">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="font-semibold">Activity Feed</h3>
+    <div class="small muted">Real-time / Recent</div>
+  </div>
+  <div id="activityFeed" class="space-y-3 max-h-64 overflow-y-auto">
+    <!-- server-populated initial entries -->
+    {% for a in posts[:6] %}
+      <div class="glass-card p-3 rounded">
+        <div class="small">{{ a[0] }}</div>
+        <div class="small muted mt-1">{{ a[1] }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    // optional: poll for new announcements
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/activity_recent');
+        const data = await res.json();
+        const el = document.getElementById('activityFeed');
+        el.innerHTML = data.map(x => `<div class="glass-card p-3 rounded"><div class="small">${x.message}</div><div class="small muted mt-1">${x.when}</div></div>`).join('');
+      } catch(e) { /* ignore */ }
+    }, 45000);
+  </script>
+</section>
