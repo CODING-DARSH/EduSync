@@ -7,11 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PG_HOST = os.getenv("PG_HOST", "localhost")
-PG_PORT = int(os.getenv("PG_PORT", 5432))
-PG_DB = os.getenv("PG_DB", "yourdb")
-PG_USER = os.getenv("PG_USER", "youruser")
-PG_PASS = os.getenv("PG_PASSWORD", "")
+# PG_HOST = os.getenv("PG_HOST", "localhost")
+# PG_PORT = int(os.getenv("PG_PORT", 5432))
+# PG_DB = os.getenv("PG_DB", "yourdb")
+# PG_USER = os.getenv("PG_USER", "youruser")
+# PG_PASS = os.getenv("PG_PASSWORD", "")
+DATABASE_URL = os.getenv("DATABASE_URL")
+conn = psycopg2.connect(DATABASE_URL)
+cur = conn.cursor()
+cur.execute("SELECT current_database();")
+print("✅ Connected to:", cur.fetchone()[0])
 
 def _translate_oracle_sql(q):
     """
@@ -32,14 +37,14 @@ def _translate_oracle_sql(q):
     q = q.replace("TRUNC(", "DATE(")  # careful: may need manual checks for complex uses
     return q
 
+conn = None
+
 def get_conn():
-    return psycopg2.connect(
-        host=PG_HOST,
-        port=PG_PORT,
-        dbname=PG_DB,
-        user=PG_USER,
-        password=PG_PASS
-    )
+    global conn
+    if conn is None or conn.closed != 0:
+        conn = psycopg2.connect(DATABASE_URL)
+    return conn
+
 
 def execute_query(query, params=None, fetch=False, returning=False):
     """
