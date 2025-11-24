@@ -33,7 +33,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey123"
+app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 app.jinja_env.filters['zip'] = zip
 
 # ---------------- UPLOAD FOLDER ----------------
