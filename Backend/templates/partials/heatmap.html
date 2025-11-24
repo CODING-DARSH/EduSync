@@ -1,0 +1,90 @@
+<!-- templates/partials/heatmap.html -->
+<section class="glass p-6 rounded-xl hover-lift">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-semibold text-white">Attendance</h3>
+    <div class="text-sm text-gray-400">Past 30 days</div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <!-- Heatmap Grid -->
+    <div class="glass-card p-3 rounded col-span-2 overflow-auto" style="max-height: 350px;">
+      <div id="heatmapGrid"></div>
+    </div>
+
+    <!-- Course Selector -->
+    <div class="glass-card p-4 rounded">
+      <label class="text-sm text-gray-300">Select course</label>
+      <select id="heatmapCourse" class="w-full mt-2 glass-card p-2 rounded">
+        <option value="">-- select --</option>
+        {% for course in courses %}
+          <option value="{{ course[0] }}">{{ course[1] }}</option>
+        {% endfor %}
+      </select>
+      <p class="text-xs text-gray-500 mt-3">
+        Green = Present • Red = Absent • Gray = No record
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    const grid = document.getElementById("heatmapGrid");
+
+    function renderHeatmap(data) {
+      const { dates, students } = data;
+
+      if (!students || students.length === 0) {
+        grid.innerHTML = "<p class='text-gray-400 text-sm'>No records found.</p>";
+        return;
+      }
+
+      let html = "<div class='overflow-x-auto'><table class='w-full text-[11px] text-gray-300'>";
+
+      // HEADER ROW with dates
+      html += "<tr><th class='p-1 text-left'>Student</th>";
+      dates.forEach(d => {
+        html += `<th class='p-1 text-center'>${d.slice(5)}</th>`;
+      });
+      html += "</tr>";
+
+      // STUDENT ROWS
+      students.forEach(s => {
+        html += `<tr><td class='p-1 font-medium text-white'>${s.name}</td>`;
+
+        s.daily.forEach(v => {
+          let color =
+            v === 1 ? "bg-green-600" :
+            v === 0 ? "bg-red-600" :
+            "bg-gray-700";
+
+          html += `<td class='p-[4px] text-center'><div class='w-4 h-4 ${color} rounded-sm mx-auto'></div></td>`;
+        });
+
+        html += "</tr>";
+      });
+
+      html += "</table></div>";
+      grid.innerHTML = html;
+    }
+
+    document.getElementById("heatmapCourse").addEventListener("change", async (e) => {
+      const id = e.target.value;
+      if (!id) {
+        grid.innerHTML = "<p class='text-gray-400'>Select a course</p>";
+        return;
+      }
+
+      grid.innerHTML = "<p class='text-gray-400 text-sm'>Loading...</p>";
+
+      try {
+        const res = await fetch(`/api/attendance_heatmap?course_id=${id}`);
+        const json = await res.json();
+        renderHeatmap(json);
+      } catch (err) {
+        grid.innerHTML = "<p class='text-red-400 text-sm'>Failed to load data.</p>";
+      }
+    });
+  </script>
+
+</section>

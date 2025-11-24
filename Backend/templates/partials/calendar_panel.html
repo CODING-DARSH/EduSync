@@ -1,0 +1,24 @@
+<!-- templates/partials/calendar_panel.html -->
+<section class="glass p-4 rounded-xl hover-lift">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="font-semibold">Quick Calendar</h3>
+    <div class="small muted">Add a deadline</div>
+  </div>
+
+  <form id="calendarForm" class="space-y-2">
+    <input name="title" placeholder="Event title" class="glass-card px-3 py-2 rounded w-full" required />
+    <input name="date" type="date" class="glass-card px-3 py-2 rounded w-full" required />
+    <button class="w-full py-2 bg-gradient-to-r from-silver to-white text-black rounded" type="submit">Add Event</button>
+  </form>
+
+  <script>
+    document.getElementById('calendarForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        const j = await res.json();
+        alert(j.message || 'Added');
+      } catch (err) { alert('Failed '+err.message) }
+    });
+  </script>
+</section>

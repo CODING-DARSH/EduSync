@@ -1,0 +1,32 @@
+{% raw %}{% macro sidebar(student, current='dashboard', notifications=[]) %}
+<div class="flex items-center gap-3"><span>📅</span><span class="font-medium">Calendar</span></div>
+</a>
+</li>
+
+
+<li>
+<a href="/student/discussions" class="block rounded-lg px-3 py-2 hover:bg-white/5 transition-colors {{ 'bg-white/5' if current == 'discussions' else '' }}">
+<div class="flex items-center gap-3"><span>💬</span><span class="font-medium">Discussions</span></div>
+</a>
+</li>
+
+
+<li>
+<a href="/student/settings" class="block rounded-lg px-3 py-2 hover:bg-white/5 transition-colors {{ 'bg-white/5' if current == 'settings' else '' }}">
+<div class="flex items-center gap-3"><span>⚙️</span><span class="font-medium">Settings</span></div>
+</a>
+</li>
+</ul>
+</nav>
+
+
+<div class="mt-auto px-4 pb-6 space-y-2">
+<form action="/logout" method="POST">
+<button type="submit" class="w-full btn-logout">🚪 Logout</button>
+</form>
+
+
+<div class="text-xs muted text-center">© 2024 EduSync</div>
+</div>
+</aside>
+{% endmacro %}{% endraw %}

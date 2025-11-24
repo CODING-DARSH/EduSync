@@ -304,6 +304,10 @@
           <button id="toggleAssignmentForm" class="text-sm btn-primary px-4 py-2 rounded-lg flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> Create New
           </button>
+          <button id="toggleTeacherAssignments" class="text-sm glass-card px-4 py-2 rounded-lg flex items-center gap-1">
+    <i class="fa-solid fa-folder-open"></i> View Assignments
+</button>
+
         </div>
 
         <!-- Assignment Creation Form -->
@@ -346,8 +350,9 @@
           </form>
         </div>
 
-        {% if assignments %}
-        <div class="space-y-4">
+       <div id="teacherAssignBody" class="max-h-0 overflow-hidden transition-all duration-500">
+{% if assignments %}
+<div class="space-y-4">
           {% for assignment in assignments %}
           <div class="glass-card p-4 rounded-xl card-hover">
             <div class="flex items-center justify-between mb-3">
@@ -494,6 +499,20 @@
 </script>
 
 <script>
+  const tBtn = document.getElementById("toggleTeacherAssignments");
+const tBody = document.getElementById("teacherAssignBody");
+
+if(tBtn && tBody){
+  tBtn.addEventListener("click", () => {
+    if(tBody.style.maxHeight && tBody.style.maxHeight !== "0px"){
+      tBody.style.maxHeight = "0";
+      tBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> View Assignments';
+    } else {
+      tBody.style.maxHeight = tBody.scrollHeight + "px";
+      tBtn.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Hide Assignments';
+    }
+  });
+}
 let latestRisk = [];
 
 document.getElementById("scanRisk").onclick = async () => {

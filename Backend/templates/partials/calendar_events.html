@@ -1,0 +1,22 @@
+<section class="glass p-6 rounded-xl hover-lift mt-6">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-xl font-semibold text-white">📅 Upcoming Events</h3>
+    <span class="text-sm text-gray-400">{{ events|length if events else 0 }} total</span>
+  </div>
+
+  {% if events %}
+  <div class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+    {% for e in events %}
+    <div class="glass-card p-3 rounded-lg border-l-2 border-blue-400">
+      <div class="flex justify-between items-center">
+        <p class="text-white font-medium">{{ e.title }}</p>
+        <span class="text-sm text-gray-300">{{ e.event_date }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <p class="text-gray-500 text-sm">No events yet — add one using the calendar!</p>
+  {% endif %}
+</section>

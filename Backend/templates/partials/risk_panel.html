@@ -1,0 +1,169 @@
+<!-- templates/partials/risk_panel.html -->
+<section class="glass p-6 rounded-2xl shadow-xl hover-lift">
+
+  <!-- HEADER -->
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+      <i class="fa-solid fa-brain text-yellow-400"></i>
+      AI Academic Risk Management
+    </h2>
+
+    <span class="px-2 py-1 rounded-full bg-black/40 border border-white/10 text-xs text-gray-300">
+      Live ML Engine
+    </span>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="flex flex-col gap-3 mb-5">
+    <button id="runScan"
+      class="w-full py-3 bg-blue-600/80 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition">
+      <i class="fa-solid fa-magnifying-glass-chart"></i>
+      Run Risk Analysis
+    </button>
+
+    <button id="sendSelected"
+      class="w-full py-3 bg-green-600/80 hover:bg-green-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition">
+      <i class="fa-solid fa-paper-plane"></i>
+      Send Notifications (Selected)
+    </button>
+
+    <button id="resetRisk"
+      class="w-full py-3 bg-red-600/80 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition">
+      <i class="fa-solid fa-rotate-left"></i>
+      Reset Notification Flags
+    </button>
+  </div>
+
+  <!-- RESULTS / LIST -->
+  <div id="riskList" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+    {% for s in at_risk_list %}
+    <div class="p-3 rounded-xl bg-[#111] flex justify-between items-center border border-white/5 hover:bg-[#181818] transition">
+
+      <div>
+        <div class="font-semibold text-white">{{ s.name }}</div>
+        <div class="text-xs text-gray-400 mt-1">
+          Avg: {{ s.avg_marks }} • Att: {{ s.attendance_pct|round(1) }}%
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="
+          px-3 py-1 rounded-lg text-xs font-bold
+          {% if s.risk_label=='high' %} status-high 
+          {% elif s.risk_label=='medium' %} status-medium 
+          {% else %} status-low 
+          {% endif %}
+        ">
+          {{ s.risk_label|upper }}
+        </span>
+
+        <input type="checkbox" class="selectRisk" value="{{ s.student_id }}">
+      </div>
+
+    </div>
+    {% else %}
+    <div class="text-center text-gray-400 text-sm p-4 glass-card rounded-xl">
+      No at-risk students detected.
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- OTP / STATUS BOX -->
+  <div id="statusBox"
+       class="mt-5 p-3 text-sm rounded-xl bg-black/30 border border-white/10 text-gray-300 hidden">
+  </div>
+
+</section>
+
+
+<script>
+  let riskData = [];
+
+  // Utility – show status box
+  function showStatus(msg, color="white") {
+    const box = document.getElementById("statusBox");
+    box.style.display = "block";
+    box.style.color = color;
+    box.innerHTML = msg;
+  }
+
+  // ------------------ RUN SCAN ------------------
+  document.getElementById("runScan").addEventListener("click", async () => {
+    showStatus("Scanning students...", "#ccc");
+    const res = await fetch("/api/risk/scan");
+    riskData = await res.json();
+
+    const box = document.getElementById("riskList");
+    box.innerHTML = "";
+
+    if (!riskData.length) {
+      box.innerHTML = `<div class="text-center text-gray-400 p-3">No students found.</div>`;
+      return;
+    }
+
+    showStatus("Scan complete. Select students to notify.", "#38bdf8");
+
+    riskData.forEach(s => {
+      let color =
+        s.risk_label === "high" ? "status-high" :
+        s.risk_label === "medium" ? "status-medium" :
+        "status-low";
+
+      box.innerHTML += `
+        <div class="p-3 rounded-xl bg-[#111] flex justify-between items-center border border-white/5 hover:bg-[#181818] transition">
+
+          <div>
+            <div class="font-semibold text-white">${s.name}</div>
+            <div class="text-xs text-gray-400 mt-1">
+              Avg: ${s.avg_marks} • Att: ${s.attendance_pct.toFixed(1)}%
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-lg text-xs font-bold ${color}">
+              ${s.risk_label.toUpperCase()}
+            </span>
+            <input type="checkbox" class="selectRisk" value="${s.student_id}">
+          </div>
+
+        </div>`;
+    });
+  });
+
+  // ------------------ SEND TO SELECTED ------------------
+  document.getElementById("sendSelected").addEventListener("click", async () => {
+    const selected = Array.from(document.querySelectorAll(".selectRisk:checked"))
+      .map(el => el.value);
+
+    if (selected.length === 0) {
+      showStatus("⚠ Select at least one student", "orange");
+      return;
+    }
+
+    showStatus("Sending notifications...", "yellow");
+
+    const res = await fetch("/api/risk/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ students: selected })
+    });
+
+    const j = await res.json();
+
+    showStatus(
+      `✅ Notifications sent to ${j.sent} students.<br>Emails delivered successfully.`,
+      "#4ade80"
+    );
+  });
+
+  // ------------------ RESET FLAGS ------------------
+  document.getElementById("resetRisk").addEventListener("click", async () => {
+    const ok = confirm("Reset all risk notification flags?");
+    if (!ok) return;
+
+    const res = await fetch("/api/risk/reset", { method: "POST" });
+    const j = await res.json();
+
+    showStatus(j.message, "orange");
+  });
+</script>

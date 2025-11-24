@@ -290,7 +290,7 @@
       </section>
 
       <!-- ASSIGNMENTS (single collapsible section) -->
-      <section class="glass p-0 overflow-hidden lift">
+      <section class="glass p-0 lift">
         <div class="p-4 flex items-center justify-between">
           <div>
             <h3 class="font-semibold">📂 Assignments</h3>
@@ -308,7 +308,7 @@
         <div id="assignBody" class="max-h-0 px-4" aria-hidden="true">
           <div class="py-4">
             {% if assignments %}
-            <div class="overflow-x-auto custom-scroll rounded-lg">
+            <div class="overflow-x-auto overflow-visible custom-scroll rounded-lg">
               <table class="w-full">
                 <thead class="bg-white/3 rounded-t-lg">
                   <tr>
@@ -334,18 +334,21 @@
                         <span class="badge badge-due">Due</span>
                       {% endif %}
                     </td>
-                    <td>
-                      {% if a[4] %}
-                        <span class="font-semibold text-green-300">{{ a[4] }}/100</span>
-                      {% elif a[3] %}
-                        <span class="muted">Submitted</span>
-                      {% else %}
-                        <form method="POST" action="/student/upload" enctype="multipart/form-data" class="flex items-center gap-2">
-                          <input type="hidden" name="assignment_id" value="{{ a[0] }}">
-                          <input type="file" name="file" class="text-xs px-2 py-1 rounded bg-white/3" />
-                          <button type="submit" class="btn-grad text-xs">Submit</button>
-                        </form>
-                      {% endif %}
+                    <td style="display:flex; align-items:center; gap:10px; overflow:visible;">
+          <form method="POST" action="/student/upload" enctype="multipart/form-data" class="flex items-center gap-2">
+  <input type="hidden" name="assignment_id" value="{{ a[0] }}">
+  <input type="file" name="file" class="text-xs px-2 py-1 rounded bg-white/3" />
+
+  {% if a[4] %}
+    <button type="submit" class="btn-grad text-xs">Re-submit</button>
+    <span class="font-semibold text-green-300">{{ a[4] }}/100</span>
+
+  {% else %}
+    <button type="submit" class="btn-grad text-xs">Submit</button>
+
+  {% endif %}
+</form>
+
                     </td>
                   </tr>
                   {% endfor %}
@@ -387,28 +390,119 @@
             {% endif %}
           </div>
         </div>
-      </section>
-
-      <!-- COURSE AVERAGES + NOTIFICATIONS -->
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="glass p-4 lift">
-          <h4 class="font-semibold mb-3">📈 Course Averages</h4>
-          {% if chart_labels and chart_data %}
-          <div class="space-y-3">
-            {% for label, value in chart_labels|zip(chart_data) %}
-            <div class="glass-soft p-3 flex items-center justify-between rounded-lg">
-              <div class="font-medium">{{ label }}</div>
-              <div class="text-right">
-                <div class="font-bold text-blue-300">{{ value }}%</div>
-                <div class="text-xs muted">Average</div>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="muted text-sm">No graded courses yet.</div>
-          {% endif %}
+        <!-- COURSE AVERAGES + UPCOMING -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="glass p-4 lift">
+    <h4 class="font-semibold mb-3">📈 Course Averages</h4>
+    {% if chart_labels and chart_data %}
+    <div class="space-y-3">
+      {% for label, value in chart_labels|zip(chart_data) %}
+      <div class="glass-soft p-3 flex items-center justify-between rounded-lg">
+        <div class="font-medium">{{ label }}</div>
+        <div class="text-right">
+          <div class="font-bold text-blue-300">{{ value }}%</div>
+          <div class="text-xs muted">Average</div>
         </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="muted text-sm">No graded courses yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="glass p-4 lift">
+    <h4 class="font-semibold mb-3">⏰ Upcoming</h4>
+    <div class="space-y-3">
+      {% set upcoming = assignments|selectattr('3','eq',None)|list %}
+      {% if upcoming and upcoming|length > 0 %}
+        {% for a in upcoming %}
+        <div class="glass-soft p-3 rounded-lg flex items-center justify-between">
+          <div>
+            <div class="font-medium">{{ a[1] }}</div>
+            <div class="text-xs muted">{{ a[2] }}</div>
+          </div>
+          <div class="badge badge-due">Due</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="muted text-sm">No upcoming deadlines</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- NOTIFICATIONS -->
+<section class="glass p-4 lift">
+  <div class="flex justify-between items-center mb-3">
+    <div class="flex items-center gap-2">
+      <h4 class="font-semibold">🔔 Notifications</h4>
+      {% if notifications %}
+      <div class="text-xs badge badge-due">{{ notifications|length }} new</div>
+      {% endif %}
+    </div>
+
+    {% if notifications %}
+    <button id="studentNotifToggle"
+            class="btn-subtle text-xs px-3 py-1 rounded-lg">
+      Show Notifications
+    </button>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+  <div id="studentNotifBody"
+       class="max-h-0 overflow-hidden transition-all duration-300">
+    <div class="space-y-3 max-h-64 overflow-y-auto custom-scroll pr-2 mt-2">
+      {% for n in notifications %}
+      <div class="glass-soft p-3 rounded-lg border-l-2 border-blue-500">
+        <div class="text-sm">{{ n[0] }}</div>
+        <div class="text-xs muted mt-1">{{ n[1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="muted text-sm">No new notifications.</div>
+  {% endif %}
+</section>
+
+      </section>
+<section class="glass p-4 lift">
+  <div class="flex justify-between items-center mb-3">
+    <div class="flex items-center gap-2">
+      <h4 class="font-semibold">🔔 Notifications</h4>
+      {% if notifications %}
+      <div class="text-xs badge badge-due">{{ notifications|length }} new</div>
+      {% endif %}
+    </div>
+
+    {% if notifications %}
+    <button id="studentNotifToggle"
+            class="btn-subtle text-xs px-3 py-1 rounded-lg">
+      Show Notifications
+    </button>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+  <div id="studentNotifBody"
+       class="max-h-0 overflow-hidden transition-all duration-300">
+    <div class="space-y-3 max-h-64 overflow-y-auto custom-scroll pr-2 mt-2">
+      {% for n in notifications %}
+      <div class="glass-soft p-3 rounded-lg border-l-2 border-blue-500">
+        <div class="text-sm">{{ n[0] }}</div>
+        <div class="text-xs muted mt-1">{{ n[1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="muted text-sm">No new notifications.</div>
+  {% endif %}
+</section>
+
+
 
         <div class="glass p-4 lift">
           <div class="flex justify-between items-center mb-3">
@@ -418,18 +512,22 @@
             {% endif %}
           </div>
 
-          {% if notifications %}
-          <div class="space-y-3 max-h-64 overflow-y-auto custom-scroll pr-2">
-            {% for n in notifications %}
-            <div class="glass-soft p-3 rounded-lg border-l-2 border-blue-500">
-              <div class="text-sm">{{ n[0] }}</div>
-              <div class="text-xs muted mt-1">{{ n[1] }}</div>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="muted text-sm">No new notifications.</div>
-          {% endif %}
+    {% if notifications %}
+    <div id="studentNotifBody"
+         class="max-h-0 overflow-hidden transition-all duration-300">
+      <div class="space-y-3 max-h-64 overflow-y-auto custom-scroll pr-2 mt-2">
+        {% for n in notifications %}
+        <div class="glass-soft p-3 rounded-lg border-l-2 border-blue-500">
+          <div class="text-sm">{{ n[0] }}</div>
+          <div class="text-xs muted mt-1">{{ n[1] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="muted text-sm">No new notifications.</div>
+    {% endif %}
+
         </div>
       </section>
 
@@ -466,6 +564,23 @@
 <!-- SCRIPTS -->
 <script>
   document.addEventListener('DOMContentLoaded', function(){
+        // Student notifications collapse
+    const studentNotifToggle = document.getElementById('studentNotifToggle');
+    const studentNotifBody = document.getElementById('studentNotifBody');
+
+    if (studentNotifToggle && studentNotifBody) {
+      studentNotifToggle.addEventListener('click', () => {
+        const isOpen = studentNotifBody.style.maxHeight && studentNotifBody.style.maxHeight !== '0px';
+
+        if (isOpen) {
+          studentNotifBody.style.maxHeight = '0';
+          studentNotifToggle.textContent = 'Show Notifications';
+        } else {
+          studentNotifBody.style.maxHeight = studentNotifBody.scrollHeight + 'px';
+          studentNotifToggle.textContent = 'Hide Notifications';
+        }
+      });
+    }
 
     // Chart
     try {
