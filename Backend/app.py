@@ -98,35 +98,52 @@ def student_upload():
 @app.route('/student/register', methods=['GET', 'POST'])
 def student_register():
     if request.method == 'POST':
-        student_id = Student.register(
+        internal_id, student_code = Student.register(
             request.form['name'],
             request.form['email'],
             request.form['phone'],
             request.form['password']
         )
-        return render_template("student_register_success.html", student_id=student_id)
+        return render_template(
+            "student_register_success.html",
+            student_id=internal_id,
+            student_code=student_code
+        )
     return render_template('register.html')
+
 
 # ---------------- STUDENT LOGIN ----------------
 @app.route('/student/login', methods=['POST'])
 def student_login():
-    student_id = request.form['id']
+    student_code = request.form['id']      # now this field is EDU00001 style
     password = request.form['password']
-    user = Student.login(student_id, password)
+    user = Student.login(student_code, password)
     if user:
+        # user[0] = internal numeric id
         session['student_id'] = user[0]
         return redirect('/student/dashboard')
-    return redirect("/login?error=student")
+    return redirect("/login?error=student")    
 
 # ---------------- STUDENT REQUEST OTP ----------------
 @app.route('/student/request-otp', methods=['POST'])
 def request_otp():
-    student_id = request.form.get('id')
+    student_code = request.form.get('id')
     form_email = request.form.get('email')
     form_phone = request.form.get('phone')
 
-    if not student_id:
+    if not student_code:
         return "Missing student id", 400
+
+    # 🔁 Map code -> internal numeric id
+    row = execute_query(
+        "SELECT id, email, phone FROM Students WHERE student_code=%s",
+        (student_code,),
+        fetch=True
+    )
+    if not row:
+        return "Student not found", 404
+
+    student_id, db_email, db_phone = row[0]
 
     otp = OTP.generate_otp(student_id)
 
@@ -138,10 +155,8 @@ def request_otp():
             send_sms(form_phone, f"Your OTP is {otp}")
 
         else:
-            data = execute_query("SELECT email, phone FROM Students WHERE id=%s", (student_id,), fetch=True)
-            if not data:
-                return "Student not found", 404
-            email, phone = data[0]
+            # fallback to DB email/phone
+            email, phone = db_email, db_phone
             if email:
                 send_email(email, "Your Login OTP", f"Your OTP is {otp}")
             elif phone:
@@ -152,16 +167,120 @@ def request_otp():
         print("OTP send error:", e)
         return "Failed to send OTP", 500
 
-    return render_template("student_verify_otp.html", student_id=student_id, message="OTP sent successfully!")
+    return render_template(
+        "student_verify_otp.html",
+        student_code=student_code,
+        message="OTP sent successfully!"
+    )
+
 
 # ---------------- VERIFY OTP ----------------
 @app.route('/student/verify-otp', methods=['POST'])
 def verify_otp():
-    if OTP.verify_otp(request.form['id'], request.form['otp']):
-        session['student_id'] = request.form['id']
+    student_code = request.form['id']
+    otp_code = request.form['otp']
+    print("FORM DATA =>", request.form)
+    # Map code back to internal id
+    row = execute_query(
+        "SELECT id FROM Students WHERE student_code=%s",
+        (student_code,),
+        fetch=True
+    )
+    if not row:
+        return "Invalid Student ID."
+
+    student_id = row[0][0]
+
+    if OTP.verify_otp(student_id, otp_code):
+        session['student_id'] = student_id
         return redirect('/student/dashboard')
     else:
         return "Invalid or expired OTP."
+
+@app.route('/student/forgot-password', methods=['GET', 'POST'])
+def student_forgot_password():
+    if request.method == 'GET':
+        return render_template('student_forgot_password.html')
+
+    # POST: user submitted form
+    student_code = request.form.get('student_code')
+    email = request.form.get('email')
+
+    if not student_code or not email:
+        return "Student ID and email are required.", 400
+
+    # find student
+    row = execute_query(
+        "SELECT id, email FROM Students WHERE student_code=%s",
+        (student_code,),
+        fetch=True
+    )
+
+    if not row:
+        return "Student not found.", 404
+
+    student_id, db_email = row[0]
+
+    if db_email is None or db_email.strip().lower() != email.strip().lower():
+        return "Email does not match our records.", 400
+
+    # generate OTP & send email
+    otp = OTP.generate_otp(student_id)
+    try:
+        send_email(email, "EduSync Password Reset OTP", f"Your password reset OTP is: {otp}")
+    except Exception as e:
+        print("Password reset OTP send error:", e)
+        return "Failed to send OTP.", 500
+
+    # store which student we're resetting in a safe way
+    session['reset_student_id'] = student_id
+
+    return render_template(
+        'student_reset_verify_otp.html',
+        student_code=student_code,
+        email=email
+    )
+@app.route('/student/forgot-password/verify', methods=['POST'])
+def student_forgot_password_verify():
+    otp_code = request.form.get('otp')
+    student_id = session.get('reset_student_id')
+
+    if not student_id:
+        return "Session expired. Please start the password reset again.", 400
+
+    if not otp_code:
+        return "OTP is required.", 400
+
+    if OTP.verify_otp(student_id, otp_code):
+        # OTP verified – show reset-password form
+        return render_template('student_reset_password.html')
+    else:
+        return "Invalid or expired OTP.", 400
+@app.route('/student/forgot-password/reset', methods=['POST'])
+def student_forgot_password_reset():
+    from models import Student  # if not already imported at top
+
+    student_id = session.get('reset_student_id')
+    if not student_id:
+        return "Session expired. Please start the reset process again.", 400
+
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not new_password or not confirm_password:
+        return "Both password fields are required.", 400
+
+    if new_password != confirm_password:
+        return "Passwords do not match.", 400
+
+    # ✅ UPDATE PASSWORD IN DB
+    Student.reset_password(student_id, new_password)
+
+    # clear reset session
+    session.pop('reset_student_id', None)
+
+    # you can flash a message if you want, but simplest:
+    return render_template('student_reset_success.html')
 
 # ---------------- STUDENT DASHBOARD ----------------
 @app.route('/student/dashboard')

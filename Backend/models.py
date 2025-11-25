@@ -13,27 +13,26 @@ load_dotenv()
 
 # ---------------- EMAIL / SMS UTILITIES ----------------
 import os
-import resend
+from sib_api_v3_sdk import Configuration, ApiClient, TransactionalEmailsApi, SendSmtpEmail
 
-resend.api_key = os.getenv("RESEND_API_KEY")
+config = Configuration()
+config.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
-
-def send_email(to_address, subject, body):
-    if not resend.api_key:
-        print(f"📧 [DEV MODE] Email to {to_address} | {subject} | {body}")
-        return
-
+def send_email(to, subject, body):
     try:
-        resend.Emails.send({
-            "from": "EduSync <onboarding@resend.dev>",
-            "to": [to_address],
-            "subject": subject,
-            "html": f"<p>{body}</p>"
-        })
-        print(f"✅ Email sent to {to_address}")
-
+        api = TransactionalEmailsApi(ApiClient(config))
+        sender_email = os.getenv("BREVO_SENDER")
+        email = SendSmtpEmail(
+            sender={"name": "EduSync", "email": sender_email}, # set this in render env,
+            to=[{"email": to}],
+            subject=subject,
+            html_content=f"<p>{body}</p>"
+        )
+        api.send_transac_email(email)
+        print(f"✅ Email sent via Brevo API → {to}")
     except Exception as e:
-        print(f"❌ Resend error: {e}")
+        print("❌ Brevo error:", e)
+
 
 
 def send_sms(to_phone, message):
@@ -71,10 +70,26 @@ def send_notification_contacts_for_student(student_id, subject, message):
 class Student:
     @staticmethod
     def register(name, email, phone, password):
-        q = "INSERT INTO Students (name, email, phone, password) VALUES (%s, %s, %s, %s) RETURNING id"
+        # 1) Insert basic data, get numeric ID
+        q = """
+        INSERT INTO Students (name, email, phone, password)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
+        """
         new_id = execute_query(q, (name, email, phone, password), returning=True)
-        print(f"✅ Student registered with ID: {new_id}")
-        return new_id
+
+        # 2) Generate pretty code based on that id
+        student_code = f"EDU{int(new_id):05d}"   # EDU00001, EDU00002, ...
+
+        # 3) Save student_code into DB
+        execute_query(
+            "UPDATE Students SET student_code=%s WHERE id=%s",
+            (student_code, new_id)
+        )
+
+        print(f"✅ Student registered with ID: {new_id}, code: {student_code}")
+        # Return BOTH: internal id + public code
+        return new_id, student_code
     @staticmethod
     def enroll(student_id, course_id):
         execute_query("INSERT INTO StudentCourses (student_id, course_id) VALUES (%s, %s)", (student_id, course_id))
@@ -85,10 +100,11 @@ class Student:
             # create a notification for student telling them to enroll in more courses
             Notification.create(student_id, f"⚠️ You are currently enrolled in {cnt} subjects. Please enroll in {6-cnt} more subjects for accurate performance tracking.") 
     @staticmethod
-    def login(student_id, password):
-        q = "SELECT id, name FROM Students WHERE id=%s AND password=%s"
-        data = execute_query(q, (student_id, password), fetch=True)
+    def login(student_code, password):
+        q = "SELECT id, name, student_code FROM Students WHERE student_code=%s AND password=%s"
+        data = execute_query(q, (student_code, password), fetch=True)
         return data[0] if data else None
+
 
     @staticmethod
     def change_password(student_id, old_password, new_password):
@@ -98,12 +114,24 @@ class Student:
             execute_query("UPDATE Students SET password=%s WHERE id=%s", (new_password, student_id))
             return True
         return False
-
+    @staticmethod
+    def reset_password(student_id, new_password):
+        """
+        Used by 'forgot password' flow — no old password required,
+        because OTP was already verified.
+        """
+        execute_query(
+            "UPDATE Students SET password=%s WHERE id=%s",
+            (new_password, student_id)
+        )
+        print(f"🔐 Password reset for student {student_id}")
+        return True
     @staticmethod
     def get_details(student_id):
-        q = "SELECT id, name, grades FROM Students WHERE id=%s"
+        q = "SELECT id, student_code, name, grades FROM Students WHERE id=%s"
         data = execute_query(q, (student_id,), fetch=True)
         return data[0] if data else None
+
 
     @staticmethod
     def enroll(student_id, course_id):

@@ -36,17 +36,24 @@
     {% endif %}
 
     <form method="POST" action="/student/verify-otp" class="space-y-4">
-      <input type="hidden" name="id" value="{{ student_id }}">
+     <input type="hidden" name="id" value="{{ student_code }}">
       <input type="text" name="otp" placeholder="Enter the OTP you received" required
              class="w-full input-dark rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-400 focus:outline-none">
       <button type="submit"
               class="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition">Verify OTP</button>
     </form>
 
-    <p class="text-center text-sm mt-4 text-gray-400">
-      Didn’t receive it? <a href="/" class="text-gray-200 hover:underline">Resend</a>
-    </p>
-  </div>
+<p class="text-center text-sm mt-4 text-gray-400">
+  Didn’t receive it?
+  <a href="#" onclick="document.getElementById('resendForm').submit()" class="text-gray-200 hover:underline">
+    Resend OTP
+  </a>
+</p>
+
+<form id="resendForm" action="/student/resend-otp" method="POST" class="hidden">
+  <input type="hidden" name="id" value="{{ student_id }}">
+</form>
+
 
   <script>
     const msg = document.querySelector('div.text-green-500');

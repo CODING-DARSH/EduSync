@@ -86,7 +86,13 @@
   <!-- STUDENT FORM -->
   <div id="form-student">
     <form method="POST" action="/student/login" class="space-y-4">
-      <input type="number" name="id" placeholder="Student ID" required class="w-full input-box px-4 py-3 rounded-lg" />
+      <input 
+  type="text" 
+  name="id" 
+  placeholder="Student ID (e.g. EDU00014)" 
+  required 
+  class="w-full input-box px-4 py-3 rounded-lg"
+/>
       <input type="password" name="password" placeholder="Password" required class="w-full input-box px-4 py-3 rounded-lg" />
 
       <button type="submit" class="w-full login-btn text-white py-3 rounded-lg font-semibold">
@@ -97,7 +103,14 @@
     <div class="text-center text-gray-400 text-sm my-4">or</div>
 
     <form method="POST" action="/student/request-otp" class="space-y-4">
-      <input type="number" name="id" placeholder="Student ID" required class="w-full input-box px-4 py-3 rounded-lg" />
+     <input 
+  type="text" 
+  name="id" 
+  placeholder="Student ID (e.g. EDU00014)" 
+  required 
+  class="w-full input-box px-4 py-3 rounded-lg"
+/>
+
       <input type="email" name="email" placeholder="Email (optional)" class="w-full input-box px-4 py-3 rounded-lg" />
       <input type="tel" name="phone" placeholder="Phone (optional)" pattern="[0-9]{10}" class="w-full input-box px-4 py-3 rounded-lg" />
 
@@ -105,7 +118,10 @@
         Request OTP
       </button>
     </form>
-
+      <p>
+    Forgot your password?
+    <a href="/student/forgot-password">Reset using OTP</a>
+  </p>
     <p class="text-center text-sm text-gray-400 mt-4">
       Don't have an account?
       <a href="/student/register" class="text-gray-200 hover:underline">Register</a>

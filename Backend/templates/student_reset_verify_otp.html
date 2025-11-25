@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EduSync – Verify OTP</title>
+</head>
+<body>
+  <h1>Verify OTP</h1>
+
+  <p>
+    We have sent an OTP to your email for Student ID 
+    <strong>{{ student_code }}</strong>.
+  </p>
+
+  <form method="POST" action="/student/forgot-password/verify">
+    <label>
+      OTP
+      <input 
+        type="text" 
+        name="otp" 
+        placeholder="Enter 6-digit OTP" 
+        required
+      />
+    </label>
+    <br />
+
+    <button type="submit">Verify OTP</button>
+  </form>
+
+  <p><a href="/student/forgot-password">Back</a></p>
+</body>
+</html>
