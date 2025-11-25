@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from twilio.rest import Client
 from datetime import datetime, timedelta
-
+from datetime import datetime, timezone
 from db import execute_query
 
 load_dotenv()
@@ -307,21 +307,51 @@ class Admin:
 class OTP:
     @staticmethod
     def generate_otp(student_id):
+        # ✅ expire all previous OTPs for this student
+        execute_query("""
+            UPDATE OTP_CODES
+            SET expires_at = NOW() - INTERVAL '1 second'
+            WHERE student_id = %s
+        """, (student_id,))
+
         otp = str(random.randint(100000, 999999))
-        expires_at = datetime.now() + timedelta(minutes=5)
-        q = "INSERT INTO OTP_CODES (student_id, otp_code, expires_at) VALUES (%s, %s, %s) RETURNING id"
+
+        # ✅ new OTP expires in 1 minute
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+
+        q = """
+            INSERT INTO OTP_CODES (student_id, otp_code, expires_at)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """
         new_id = execute_query(q, (student_id, otp, expires_at), returning=True)
+
         print(f"✅ OTP {otp} created (id={new_id}) for Student {student_id}")
         return otp
 
+
+    
+
     @staticmethod
     def verify_otp(student_id, otp_code):
-        q = "SELECT otp_code, expires_at FROM OTP_CODES WHERE student_id=%s ORDER BY expires_at DESC LIMIT 1"
+        q = """
+            SELECT otp_code, expires_at
+            FROM OTP_CODES
+            WHERE student_id=%s
+            ORDER BY id DESC
+            LIMIT 1
+            """
         data = execute_query(q, (student_id,), fetch=True)
         if not data:
             return False
+
         otp, expiry = data[0]
-        return otp == otp_code and datetime.now() < expiry
+
+        now  = datetime.now(timezone.utc)
+
+    # ✅ must match AND not expired
+        return str(otp) == str(otp_code) and now < expiry
+
 
 # ---------------- ASSIGNMENTS MODEL ----------------
 class Assignment:
