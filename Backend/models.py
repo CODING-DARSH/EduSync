@@ -12,28 +12,29 @@ from db import execute_query
 load_dotenv()
 
 # ---------------- EMAIL / SMS UTILITIES ----------------
+import os
+import resend
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+
+
 def send_email(to_address, subject, body):
-    sender = os.getenv("EMAIL_ADDR")
-    app_password = os.getenv("EMAIL_APP_PASSWORD")
-
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = to_address
-
-    if not sender or not app_password:
-        # Dev mode: print instead of sending
-        print(f"📧 [DEV MODE] send_email to {to_address} | Subject: {subject} | Body: {body}")
+    if not resend.api_key:
+        print(f"📧 [DEV MODE] Email to {to_address} | {subject} | {body}")
         return
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(sender, app_password)
-            server.send_message(msg)
-        print(f"✅ Email sent to: {to_address}")
+        resend.Emails.send({
+            "from": "EduSync <onboarding@resend.dev>",
+            "to": [to_address],
+            "subject": subject,
+            "html": f"<p>{body}</p>"
+        })
+        print(f"✅ Email sent to {to_address}")
+
     except Exception as e:
-        print(f"❌ Email send error: {e}")
+        print(f"❌ Resend error: {e}")
+
 
 def send_sms(to_phone, message):
     sid = os.getenv("TWILIO_SID")
