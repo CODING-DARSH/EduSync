@@ -317,7 +317,7 @@ class OTP:
         otp = str(random.randint(100000, 999999))
 
         # ✅ new OTP expires in 1 minute
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=2)
 
         q = """
             INSERT INTO OTP_CODES (student_id, otp_code, expires_at)
@@ -334,23 +334,26 @@ class OTP:
 
     @staticmethod
     def verify_otp(student_id, otp_code):
-        q = """
-            SELECT otp_code, expires_at
-            FROM OTP_CODES
-            WHERE student_id=%s
-            ORDER BY id DESC
-            LIMIT 1
-            """
-        data = execute_query(q, (student_id,), fetch=True)
-        if not data:
+        from datetime import datetime, timezone
+
+        row = execute_query(
+            "SELECT otp_code, expires_at FROM OTP_CODES WHERE student_id=%s ORDER BY id DESC LIMIT 1",
+            (student_id,), fetch=True
+        )
+
+        if not row:
             return False
 
-        otp, expiry = data[0]
+        otp, expiry = row[0]
 
-        now  = datetime.now(timezone.utc)
+    # ✅ Make expiry timezone-aware
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
 
-    # ✅ must match AND not expired
+        now = datetime.now(timezone.utc)
+
         return str(otp) == str(otp_code) and now < expiry
+
 
 
 # ---------------- ASSIGNMENTS MODEL ----------------

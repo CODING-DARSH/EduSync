@@ -48,6 +48,24 @@ def home():
 @app.route('/login')
 def login_page():
     return render_template('login.html')
+@app.route('/student/resend-otp', methods=['POST'])
+def resend_otp():
+    student_id = request.form.get('id')
+
+    if not student_id:
+        return "Missing student id", 400
+
+    # generate new OTP (old ones auto-expire based on your new logic)
+    otp = OTP.generate_otp(student_id)
+
+    # fetch email
+    row = execute_query("SELECT email FROM Students WHERE id=%s", (student_id,), fetch=True)
+    if row and row[0][0]:
+        send_email(row[0][0], "Your Login OTP", f"Your new OTP is {otp}")
+
+    return render_template("student_verify_otp.html",
+                           student_id=student_id,
+                           message="✅ New OTP sent!")
 
 
 # ---------------- STUDENT UPLOAD ----------------
