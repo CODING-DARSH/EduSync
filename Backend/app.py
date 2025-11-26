@@ -138,6 +138,7 @@ def student_register():
 <strong>Team EduSync</strong></p>
 """
 
+
         send_email(
             request.form['email'],
             "Verify Your EduSync Registration ✅",
@@ -179,16 +180,17 @@ def student_register_verify():
         welcome_msg = f"""
 <p>Hi <strong>{student_name}</strong>,</p>
 
-<p>Welcome to <strong>EduSync</strong> — your smart learning portal </p>
+<p>Welcome to <strong>EduSync</strong> — your smart learning portal</p>
 
 <p>Your account has been successfully verified and activated.</p>
 
-<p>You can now explore your dashboard, manage courses, track progress, and stay ahead </p>
+<p>You can now explore your dashboard, manage courses, track progress, and stay ahead.</p>
 
 <p>We're excited to have you onboard!</p>
 
 <p>— Team EduSync</p>
 """
+
 
         send_email(email, "Welcome to EduSync ", welcome_msg)
 
