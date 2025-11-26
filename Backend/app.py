@@ -32,6 +32,7 @@ from db import execute_query
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
+
 app = Flask(__name__, static_folder='static', template_folder='templates')  #updated1
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 app.jinja_env.filters['zip'] = zip
