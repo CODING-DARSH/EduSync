@@ -136,20 +136,36 @@ def request_otp():
 
     # 🔁 Map code -> internal numeric id
     row = execute_query(
-        "SELECT id, email, phone FROM Students WHERE student_code=%s",
+        "SELECT id,name,email, phone FROM Students WHERE student_code=%s",
         (student_code,),
         fetch=True
     )
     if not row:
         return "Student not found", 404
 
-    student_id, db_email, db_phone = row[0]
+    student_id,student_name, db_email, db_phone = row[0]
 
     otp = OTP.generate_otp(student_id)
 
     try:
         if form_email:
-            send_email(form_email, "Your Login OTP", f"Your OTP is {otp}")
+            msg = f"""
+<p>This message concerns your EduSync account, <strong>{student_name}</strong>.</p>
+
+<p>Your one-time authentication code is:<br>
+<b style="font-size:20px;">{otp}</b></p>
+
+<p>This code will expire in <b>1 minute</b> and can only be used once.</p>
+
+<p>If you did not initiate this request, no action is required.</p>
+
+<p>Regards,<br>
+EduSync Security Team</p>
+"""
+
+
+            send_email(form_email, "EduSync Login Verification", msg)
+
 
         elif form_phone:
             send_sms(form_phone, f"Your OTP is {otp}")
@@ -211,7 +227,7 @@ def student_forgot_password():
 
     # find student
     row = execute_query(
-        "SELECT id, email FROM Students WHERE student_code=%s",
+        "SELECT id,name,email FROM Students WHERE student_code=%s",
         (student_code,),
         fetch=True
     )
@@ -219,7 +235,7 @@ def student_forgot_password():
     if not row:
         return "Student not found.", 404
 
-    student_id, db_email = row[0]
+    student_id,student_name,db_email = row[0]
 
     if db_email is None or db_email.strip().lower() != email.strip().lower():
         return "Email does not match our records.", 400
@@ -227,7 +243,26 @@ def student_forgot_password():
     # generate OTP & send email
     otp = OTP.generate_otp(student_id)
     try:
-        send_email(email, "EduSync Password Reset OTP", f"Your password reset OTP is: {otp}")
+        msg = f"""
+            <p>A password reset was requested for your EduSync account, <strong>{student_name}</strong>.</p>
+
+            <p>
+            Your verification code is:<br>
+            <b style="font-size:20px;">{otp}</b>
+            </p>
+
+            <p>
+            This code expires in <b>1 minutes</b> and can only be used once.
+            </p>
+
+            <p>
+            If you did not request this, no action is required.
+            </p>
+
+            <p>— EduSync Security Team</p>
+        """
+        send_email(email, "Reset Your EduSync Password", msg)
+
     except Exception as e:
         print("Password reset OTP send error:", e)
         return "Failed to send OTP.", 500
@@ -506,7 +541,7 @@ Dear {sname},
 Our system detected that your academic risk score is {risk_score:.2f}, which places you in the **{risk_label.upper()} RISK** category.
 
 📊 Performance Summary:
-• Average Marks: {avg_marks}
+• Average Marks: {avg_marks:.2f}
 • Attendance (last 90 days): {attendance:.2f}%
 • Low-Scoring Subjects (<40 marks): {below_count}
 
