@@ -110,18 +110,103 @@ def student_upload():
 @app.route('/student/register', methods=['GET', 'POST'])
 def student_register():
     if request.method == 'POST':
+
         internal_id, student_code = Student.register(
             request.form['name'],
             request.form['email'],
             request.form['phone'],
             request.form['password']
         )
+
+        otp = OTP.generate_otp(internal_id)
+
+        # ✅ new registration OTP email
+        msg = f"""
+<p>You're just one step away from activating your EduSync account 🎓</p>
+
+<p>Enter the verification code below to continue:</p>
+
+<p style="font-size:32px; font-weight:700; letter-spacing:6px; margin:18px 0; color:#4f8dfd;">
+  {otp}
+</p>
+
+<p>This code is valid for <strong>1 minute</strong> and can only be used once.</p>
+
+<p>If you didn’t request this, simply ignore this email — no changes will be made.</p>
+
+<p>See you soon 👋<br>
+<strong>Team EduSync</strong></p>
+"""
+
+        send_email(
+            request.form['email'],
+            "Verify Your EduSync Registration ✅",
+            msg
+        )
+
+        return redirect(f"/student/register/verify?id={internal_id}")
+
+    return render_template('register.html')
+
+@app.route('/student/register/verify', methods=['GET', 'POST'])
+def student_register_verify():
+    student_id = request.args.get('id') or request.form.get('student_id')
+
+    if request.method == 'POST':
+        otp_code = request.form.get('otp')
+
+        if not OTP.verify_otp(student_id, otp_code):
+            return "Invalid or expired OTP", 400
+
+        # ✅ create student_code AFTER successful verification
+        student_code = f"EDU{int(student_id):05d}"
+
+        execute_query(
+        "UPDATE Students SET student_code=%s WHERE id=%s",
+        (student_code, student_id)
+        )
+
+
+        # ✅ fetch email + name for welcome mail
+        row = execute_query(
+            "SELECT name, email FROM Students WHERE id=%s",
+            (student_id,),
+            fetch=True
+        )
+        student_name, email = row[0]
+
+        # ✅ send welcome email once
+        welcome_msg = f"""
+<p>Hi <strong>{student_name}</strong>,</p>
+
+<p>Welcome to <strong>EduSync</strong> — your smart learning portal </p>
+
+<p>Your account has been successfully verified and activated.</p>
+
+<p>You can now explore your dashboard, manage courses, track progress, and stay ahead </p>
+
+<p>We're excited to have you onboard!</p>
+
+<p>— Team EduSync</p>
+"""
+
+        send_email(email, "Welcome to EduSync ", welcome_msg)
+
+        session['student_id'] = student_id
+
         return render_template(
             "student_register_success.html",
-            student_id=internal_id,
-            student_code=student_code
+            student_code=student_code,
+            student_id=student_id
         )
-    return render_template('register.html')
+
+    # ✅ GET → show OTP input page, NOT success page
+    return render_template(
+        "student_register_verify_otp.html",
+        student_id=student_id
+    )
+
+
 
 
 # ---------------- STUDENT LOGIN ----------------
@@ -1029,4 +1114,3 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-

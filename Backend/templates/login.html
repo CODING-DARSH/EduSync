@@ -111,16 +111,18 @@
   class="w-full input-box px-4 py-3 rounded-lg"
 />
 
-      <input type="email" name="email" placeholder="Email (optional)" class="w-full input-box px-4 py-3 rounded-lg" />
-      <input type="tel" name="phone" placeholder="Phone (optional)" pattern="[0-9]{10}" class="w-full input-box px-4 py-3 rounded-lg" />
+      <input type="email" name="email" placeholder="Email" class="w-full input-box px-4 py-3 rounded-lg" />
+      <!-- <input type="tel" name="phone" placeholder="Phone (optional)" pattern="[0-9]{10}" class="w-full input-box px-4 py-3 rounded-lg" /> -->
 
-      <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-semibold">
-        Request OTP
-      </button>
+<button type="submit"
+  class="w-full bg-gray-300 hover:bg-gray-400 text-black py-3 rounded-lg font-semibold">
+  Request OTP
+</button>
+
     </form>
-      <p>
+      <p class="text-white">
     Forgot your password?
-    <a href="/student/forgot-password">Reset using OTP</a>
+    <a href="/student/forgot-password" class="text-white underline hover:opacity-80">Reset using OTP</a>
   </p>
     <p class="text-center text-sm text-gray-400 mt-4">
       Don't have an account?

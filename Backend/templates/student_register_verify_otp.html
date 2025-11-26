@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your OTP</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background: #0d0d0d;
+      font-family: Inter, sans-serif;
+    }
+
+    .otp-box {
+      width: 55px;
+      height: 55px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      text-align: center;
+      font-size: 22px;
+      color: white;
+    }
+
+.otp-box:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
+
+  </style>
+
+</head>
+<body class="flex items-center justify-center min-h-screen px-4">
+
+  <div class="bg-white/5 backdrop-blur-xl border border-white/10 w-full max-w-md rounded-2xl p-8 text-center shadow-xl">
+
+    <h1 class="text-2xl font-bold text-white mb-3">Verify Your Code</h1>
+    <p class="text-gray-400 text-sm mb-6">
+      We’ve sent a 6-digit code to your email.
+    </p>
+
+    {% if message %}
+      <div class="mb-4 text-green-400 text-sm">
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <form method="POST" action="/student/register/verify" id="otpForm">
+      <input type="hidden" name="student_id" value="{{ student_id }}">
+
+      <div class="flex justify-center gap-3 mb-6">
+        <input maxlength="1" class="otp-box" name="otp1">
+        <input maxlength="1" class="otp-box" name="otp2">
+        <input maxlength="1" class="otp-box" name="otp3">
+        <input maxlength="1" class="otp-box" name="otp4">
+        <input maxlength="1" class="otp-box" name="otp5">
+        <input maxlength="1" class="otp-box" name="otp6">
+      </div>
+
+<button type="submit"
+  class="w-full py-3 rounded-lg bg-white hover:bg-indigo-700 text-black font-semibold transition">
+  Verify & Continue
+</button>
+
+    </form>
+
+    <p class="text-gray-400 text-sm mt-6">
+      Didn’t receive it?
+      <a href="#" onclick="document.getElementById('resendForm').submit()" class="text-gray-200 hover:underline">
+        Resend OTP
+      </a>
+    </p>
+
+    <form id="resendForm" action="/student/resend-otp" method="POST" class="hidden">
+      <input type="hidden" name="student_id" value="{{ student_id }}">
+    </form>
+
+  </div>
+
+<script>
+  const inputs = document.querySelectorAll('.otp-box');
+  inputs.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      if (input.value && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+    });
+  });
+
+  document.getElementById("otpForm").addEventListener("submit", () => {
+    const otp = [...inputs].map(i => i.value).join("");
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = "otp";
+    hidden.value = otp;
+    otpForm.appendChild(hidden);
+  });
+</script>
+
+</body>
+</html>
