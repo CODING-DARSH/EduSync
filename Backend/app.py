@@ -31,8 +31,8 @@ from models import (
 from db import execute_query
 from datetime import datetime
 from werkzeug.utils import secure_filename
-
-app = Flask(__name__)
+from flask import send_from_directory
+app = Flask(__name__, static_folder='Backend/static', template_folder='Backend/templates')
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")
 app.jinja_env.filters['zip'] = zip
 
@@ -42,6 +42,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # ---------------- HOME ----------------
+
 @app.route('/')
 def home():
     return render_template('landing.html')
@@ -49,6 +50,16 @@ def home():
 def login_page():
     return render_template('login.html')
 @app.route('/student/resend-otp', methods=['POST'])
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        app.static_folder,
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
+
 def resend_otp():
     student_id = request.form.get('id')
 
