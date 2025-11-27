@@ -170,11 +170,11 @@ def student_register_verify():
 
         # ✅ fetch email + name for welcome mail
         row = execute_query(
-            "SELECT name, email FROM Students WHERE id=%s",
+            "SELECT name, email,student_code FROM Students WHERE id=%s",
             (student_id,),
             fetch=True
         )
-        student_name, email = row[0]
+        student_name, email,student_code = row[0]
 
         # ✅ send welcome email once
         welcome_msg = f"""
@@ -183,6 +183,8 @@ def student_register_verify():
 <p>Welcome to <strong>EduSync</strong> — your smart learning portal</p>
 
 <p>Your account has been successfully verified and activated.</p>
+
+<p> For login your  student code is <strong>{student_code}</strong> </p>
 
 <p>You can now explore your dashboard, manage courses, track progress, and stay ahead.</p>
 
